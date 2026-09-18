@@ -78,7 +78,12 @@ Scope {
 
             readonly property real dashboardOffset: dashboardReveal
                 + (dashboardHeight > 0 ? root.theme.dashboard.gap * dashboardReveal / dashboardHeight : 0)
-            implicitHeight: root.theme.topBar.windowHeight + dashboardOffset
+            // Keep the Wayland surface stable; animate only the panel position.
+            implicitHeight: root.theme.topBar.windowHeight + dashboardHeight + root.theme.dashboard.gap
+            mask: Region {
+                width: barWindow.width
+                height: root.theme.topBar.windowHeight + barWindow.dashboardOffset
+            }
             anchors { top: true; left: true; right: true }
             exclusiveZone: root.theme.topBar.windowHeight
             focusable: false
@@ -92,9 +97,9 @@ Scope {
                     horizontalCenter: parent.horizontalCenter
                 }
                 width: surface.width
-                height: barWindow.dashboardReveal
+                height: barWindow.dashboardHeight
                 clip: true
-                visible: height > 0
+                visible: barWindow.dashboardReveal > 0
 
                 Dashboard {
                     theme: root.theme
@@ -103,7 +108,7 @@ Scope {
                     network: root.network
                     width: parent.width
                     height: barWindow.dashboardHeight
-                    y: parent.height - height
+                    y: barWindow.dashboardReveal - height
                 }
             }
 

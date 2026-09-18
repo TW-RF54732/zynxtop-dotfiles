@@ -26,7 +26,7 @@
 | 靜音提示 | 解除靜音 | 每次調整 5% 輸出音量，限制在 0–100% |
 | Dashboard 入口 | 切換共用開關狀態 | 無 |
 
-Dashboard 使用同寬玻璃容器，預設高度 280px，間距 8px，於 260ms 內從上方下拉並將 Bar 往下推；收合時反向播放。面板視窗高度隨動畫變更，exclusive zone 維持原本 Top Bar 的高度；展開部分覆蓋其他視窗，不推動桌面版面。面板目前留白，內容由 `Dashboard.qml` 擴充，尺寸及動畫由 `Style.qml` 的 `dashboard` 區塊設定。
+Dashboard 使用同寬玻璃容器，預設高度 280px，間距 8px，於 260ms 內從上方下拉並將 Bar 往下推；收合時反向播放。面板與視窗保持固定尺寸，只以垂直位移播放進出動畫；滑鼠輸入範圍隨可見高度調整，exclusive zone 維持原本 Top Bar 的高度；展開部分覆蓋其他視窗，不推動桌面版面。面板目前留白，內容由 `Dashboard.qml` 擴充，尺寸及動畫由 `Style.qml` 的 `dashboard` 區塊設定。
 
 保留 `quickshell-topbar` namespace，以及以下 IPC：
 
