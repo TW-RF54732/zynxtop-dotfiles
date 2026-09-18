@@ -18,6 +18,7 @@ Scope {
     required property AudioService audio
     required property NetworkService network
     required property ClockService clock
+    SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
 
     IpcHandler {
         target: "topbar"
@@ -97,6 +98,9 @@ Scope {
 
                 Dashboard {
                     theme: root.theme
+                    systemStats: systemStats
+                    audio: root.audio
+                    network: root.network
                     width: parent.width
                     height: barWindow.dashboardHeight
                     y: parent.height - height
