@@ -73,6 +73,12 @@ QtObject {
         readonly property bool horizontal: false
     }
 
+    readonly property var dashboard: QtObject {
+        readonly property int height: 280
+        readonly property int gap: 8
+        readonly property int animationDuration: 260
+    }
+
     readonly property var topBar: QtObject {
         readonly property int height: 48
         readonly property int maxWidth: 2200

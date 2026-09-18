@@ -5,7 +5,7 @@
 ## 版面與視覺
 
 - 每個螢幕建立一個透明 layer-shell 視窗，內含置中的單一玻璃長條。
-- 長條高度 48px、最大寬度 2200px，左右邊距 24px、頂部邊距 10px、底部預留 8px；視窗高度與 exclusive zone 為 66px。
+- 長條高度 48px、最大寬度 2200px，左右邊距 24px、頂部邊距 10px、底部預留 8px；收合時視窗高度與 exclusive zone 為 66px；Dashboard 展開時增加面板視窗高度與間距，exclusive zone 固定為 66px。
 - 使用 Kitty `#111318` 衍生的 65% 不透明深色背景、1px 低對比邊框、5px 圓角；模糊與 xray 由 compositor 提供。
 - 左側為該螢幕的正數工作區；中央為目前聚焦且屬於該螢幕的視窗標題；右側依序為日期時間、異常狀態及 Dashboard 入口。
 - 視窗標題相對整條 Bar 置中，依左右區塊中較寬者限制可用寬度。過長時單行省略，沒有標題時隱藏。
@@ -26,7 +26,7 @@
 | 靜音提示 | 解除靜音 | 每次調整 5% 輸出音量，限制在 0–100% |
 | Dashboard 入口 | 切換共用開關狀態 | 無 |
 
-Dashboard 尚未實作，入口目前只切換反白狀態。沒有 tooltip、日期頁面或通知功能；這些屬於後續功能，不包含在本次重構。
+Dashboard 使用同寬玻璃容器，預設高度 280px，間距 8px，於 260ms 內從上方下拉並將 Bar 往下推；收合時反向播放。面板視窗高度隨動畫變更，exclusive zone 維持原本 Top Bar 的高度；展開部分覆蓋其他視窗，不推動桌面版面。面板目前留白，內容由 `Dashboard.qml` 擴充，尺寸及動畫由 `Style.qml` 的 `dashboard` 區塊設定。
 
 保留 `quickshell-topbar` namespace，以及以下 IPC：
 

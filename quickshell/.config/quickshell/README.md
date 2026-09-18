@@ -16,9 +16,10 @@ Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配�
 | 在工作區上滾動 | 切換前後已有的工作區 |
 | 點擊靜音圖示 | 解除靜音 |
 | 在靜音圖示上滾動 | 調整輸出音量 |
-| 點擊 Dashboard 圖示 | 切換預留的 Dashboard 狀態 |
+| 點擊 Dashboard 圖示 | 展開／收合 Dashboard |
+| `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
 
-Dashboard 尚未實作，目前按鈕只呈現開啟／關閉狀態，供後續面板直接接入。Top Bar 的 layer-shell namespace 為 `quickshell-topbar`；若要使用與 Launcher 相同的模糊效果，需在 compositor 加入對應規則。
+Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，桌面只保留原本 Top Bar 的空間，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。目前 Dashboard 是留白容器，供後續加入小工具；高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。Top Bar 的 layer-shell namespace 為 `quickshell-topbar`；若要使用與 Launcher 相同的模糊效果，需在 compositor 加入對應規則。
 
 IPC 介面：
 

@@ -63,12 +63,45 @@ Scope {
             }
 
             screen: modelData
-            implicitHeight: root.theme.topBar.windowHeight
+            readonly property real dashboardHeight: Math.min(root.theme.dashboard.height,
+                Math.max(0, screen.height - root.theme.topBar.windowHeight
+                    - root.theme.topBar.topMargin - root.theme.dashboard.gap))
+            property real dashboardReveal: root.dashboardOpen ? dashboardHeight : 0
+
+            Behavior on dashboardReveal {
+                NumberAnimation {
+                    duration: root.theme.dashboard.animationDuration
+                    easing.type: Easing.InOutCubic
+                }
+            }
+
+            readonly property real dashboardOffset: dashboardReveal
+                + (dashboardHeight > 0 ? root.theme.dashboard.gap * dashboardReveal / dashboardHeight : 0)
+            implicitHeight: root.theme.topBar.windowHeight + dashboardOffset
             anchors { top: true; left: true; right: true }
             exclusiveZone: root.theme.topBar.windowHeight
             focusable: false
             color: "transparent"
             WlrLayershell.namespace: "quickshell-topbar"
+
+            Item {
+                anchors {
+                    top: parent.top
+                    topMargin: root.theme.topBar.topMargin
+                    horizontalCenter: parent.horizontalCenter
+                }
+                width: surface.width
+                height: barWindow.dashboardReveal
+                clip: true
+                visible: height > 0
+
+                Dashboard {
+                    theme: root.theme
+                    width: parent.width
+                    height: barWindow.dashboardHeight
+                    y: parent.height - height
+                }
+            }
 
             GlassFrame {
                 id: surface
@@ -88,7 +121,7 @@ Scope {
 
                 anchors {
                     top: parent.top
-                    topMargin: root.theme.topBar.topMargin
+                    topMargin: root.theme.topBar.topMargin + barWindow.dashboardOffset
                     horizontalCenter: parent.horizontalCenter
                 }
                 width: Math.min(parent.width - root.theme.topBar.sideMargin * 2,

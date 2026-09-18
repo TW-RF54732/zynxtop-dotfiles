@@ -18,6 +18,7 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(programs.file_manager))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(programs.browser))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(programs.menu))
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("qs ipc call topbar toggleDashboard"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 
