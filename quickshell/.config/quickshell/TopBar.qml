@@ -125,6 +125,7 @@ Scope {
                     systemStats: systemStats
                     audio: root.audio
                     network: root.network
+                    notifications: root.notifications
                     width: parent.width
                     height: barWindow.dashboardHeight
                     y: barWindow.dashboardReveal - height

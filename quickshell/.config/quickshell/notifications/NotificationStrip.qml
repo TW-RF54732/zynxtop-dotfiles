@@ -323,31 +323,15 @@ Item {
                 color: "transparent"
                 border.width: 0
 
-                Image {
-                    id: icon
+                NotificationIcon {
+                    theme: root.theme
                     x: (root.step - width) / 2
                     y: (root.height - height) / 2
                     width: root.theme.topBar.iconSize
                     height: width
-                    sourceSize.width: width
-                    sourceSize.height: height
-                    source: {
-                        const path = card.modelData.appIcon
-                        if (!path) return ""
-                        if (path.startsWith("/")) return "file://" + path
-                        if (path.includes("://")) return path
-                        return Quickshell.iconPath(path)
-                    }
-                    visible: status === Image.Ready
-                }
-                MonoText {
-                    theme: root.theme
-                    width: root.step
-                    height: root.height
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    text: "󰂚"
-                    visible: !icon.visible
+                    appIcon: card.modelData.appIcon || ""
+                    appName: card.modelData.appName || ""
+                    desktopEntry: card.modelData.desktopEntry || ""
                 }
                 MonoText {
                     theme: root.theme

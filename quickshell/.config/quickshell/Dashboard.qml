@@ -9,6 +9,7 @@ GlassFrame {
     required property SystemStatsService systemStats
     required property AudioService audio
     required property NetworkService network
+    required property NotificationService notifications
     function diskCapacity() {
         const stats = systemStats.stats
         return stats.diskTotal ? Math.round(stats.diskUsed / 1073741824) + "/"
@@ -89,7 +90,14 @@ GlassFrame {
             ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
         }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        Item { Layout.fillWidth: true; Layout.fillHeight: true }
+        NotificationCenter {
+            theme: root.theme
+            notifications: root.notifications
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: 240
+            Layout.preferredWidth: 520
+        }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
         TrayPanel { theme: root.theme; Layout.preferredWidth: 120; Layout.maximumWidth: 120; Layout.fillHeight: true }
     }

@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Notifications
 import "services"
 import "notifications"
+import "dashboard"
 
 ShellRoot {
     id: root
@@ -35,6 +36,10 @@ ShellRoot {
     Style { id: style }
     NotificationService { id: service }
     Window {
+        width: 552; height: 300; visible: true; color: "#181818"
+        NotificationCenter { id: center; theme: style; notifications: service; anchors.fill: parent; anchors.margins: 16 }
+    }
+    Window {
         width: 600; height: 240
         visible: true
         color: "#181818"
@@ -44,6 +49,16 @@ ShellRoot {
     Timer {
         interval: 100; running: true
         onTriggered: {
+            if (Quickshell.env("NOTIFICATION_HISTORY_RELOAD") === "1") {
+                root.check(service.history.length === 2 && service.unreadCount === 1,
+                    "history and read state survive a new shell process")
+                root.check(service.history.every(record => record.summary === "Real notification"
+                    && record.body === "Body"), "persisted history contains text snapshots")
+                console.log(root.failures ? "FAIL: notification history reload" : "PASS: notification history reload")
+                Qt.quit()
+                return
+            }
+            service.clearHistory()
             root.check(!strip.visible && strip.occupiedWidth === 0, "empty strip is hidden")
             strip.notifications = [root.notification(1)]
             root.check(strip.visibleCount === 1 && strip.hiddenCount === 0
@@ -84,6 +99,9 @@ ShellRoot {
             const first = root.notification(1)
             service.receive(first)
             root.check(first.tracked && service.entries[0].deadline === 0, "zero timeout stays until closed")
+            root.check(service.history.length === 1 && service.unreadCount === 1
+                && service.history[0].body === first.body,
+                "receiving saves an unread text snapshot")
             const second = root.notification(2)
             second.expireTimeout = -1
             service.receive(second)
@@ -97,14 +115,69 @@ ShellRoot {
             service.receive(first)
             root.check(service.notifications.length === 2 && service.notifications[1].id === 1,
                 "replacement moves to latest without increasing count")
+            root.check(service.history.length === 3 && service.history[0].sourceId === 1,
+                "replacement updates the same history record")
             service.remove(1)
             root.check(service.notifications.length === 1 && service.notifications[0].id === 2,
                 "closing removes only the corresponding notification")
+            root.check(service.history.length === 3, "closing keeps the notification history")
+            root.check(center.records.length === 3 && center.groups.length === 1 && center.rows.length === 1,
+                "same-source unread notifications collapse into one stack")
+            center.toggleGroup(center.groups[0].key)
+            root.check(center.rows.length === 4 && center.rows[1].key === service.history[0].key,
+                "opening a source stack reveals individual notifications newest first")
+            center.toggleRecord(service.history[0])
+            root.check(!service.history[0].read && center.records.length === 3,
+                "viewing detail does not remove a message before reading finishes")
+            center.toggleRecord(service.history[0])
+            root.check(service.history[0].read && service.unreadCount === 2
+                && center.records.length === 2 && center.expandedKey === "",
+                "closing a viewed notification automatically marks it read and removes it")
+            const other = root.notification(22)
+            other.appName = "Other"
+            other.desktopEntry = "other.desktop"
+            service.receive(other)
+            const otherKey = service.history[0].key
+            root.check(center.groups.length === 2, "different sources remain separate stacks")
+            const testGroup = center.rows.find(row => row.isGroupHeader && row.groupKey === "test")
+            center.markRowRead(testGroup)
+            root.check(service.unreadCount === 1 && center.groups.length === 1
+                && center.records[0].appName === "Other", "marking a source read preserves other unread sources")
+            service.markAllRead()
+            root.check(service.unreadCount === 0 && center.records.length === 0 && center.rows.length === 0,
+                "mark all read clears the unread-only center")
+            service.deleteHistory(otherKey)
+            service.remove(22)
+            service.deleteHistory(service.history[0].key)
+            root.check(service.history.length === 2 && service.notifications.length === 1,
+                "deleting a history record leaves live popups alone")
             const critical = root.notification(3)
             critical.urgency = NotificationUrgency.Critical
             critical.expireTimeout = -1
             service.receive(critical)
             root.check(service.entries[1].deadline === 0, "critical notification does not auto-expire")
+            const transient = root.notification(21)
+            transient.transient = true
+            const beforeTransient = service.history.length
+            service.receive(transient)
+            root.check(service.history.length === beforeTransient, "transient notifications are not archived")
+            service.historyLimit = 2
+            service.receive(root.notification(91))
+            service.receive(root.notification(92))
+            root.check(service.history.length === 2 && service.history[0].sourceId === 92
+                && service.history[1].sourceId === 91, "history retains newest records within limit")
+            service.historyLimit = 500
+            service.markRead(service.history[0].key)
+            const carriedKey = service.history[0].key
+            service.entries = []
+            const carried = root.notification(92)
+            carried.lastGeneration = true
+            service.receive(carried)
+            root.check(service.history.length === 2 && service.history[0].key === carriedKey
+                && service.history[0].read, "hot reload preserves carried notification identity and read state")
+            service.clearHistory()
+            root.check(service.history.length === 0 && service.notifications.length > 0,
+                "clear history preserves active notifications")
             service.entries = []
             const records = Array.from({length: 4}, (_, i) => root.notification(i + 1))
             records[1].body = "詳細訊息與很多內容 ".repeat(200) + "\nExtra line".repeat(30)
@@ -218,6 +291,8 @@ ShellRoot {
                 if (service.notifications.length)
                     service.notifications[0].dismiss()
                 root.check(service.notifications.length === 0, "real close signal removes notification")
+                root.check(service.history.length === 1, "real dismissed notification remains in history")
+                service.markRead(service.history[0].key)
                 root.realStage = 1
                 sender.running = true
             } else {
@@ -230,6 +305,8 @@ ShellRoot {
         interval: style.notifications.expandDuration * 2 + style.notifications.slideDuration + 500
         onTriggered: {
             root.check(service.notifications.length === 0, "real timeout expires and removes notification")
+            root.check(service.history.length === 2 && service.unreadCount === 1,
+                "expired and dismissed notifications stay in history with read state")
             console.log(root.failures ? "FAIL: notification checks" : "PASS: notification checks")
             Qt.quit()
         }

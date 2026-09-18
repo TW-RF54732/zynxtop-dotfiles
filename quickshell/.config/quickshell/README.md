@@ -28,7 +28,7 @@ Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配�
 | 點擊 Dashboard 圖示 | 展開／收合 Dashboard |
 | `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
 
-Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，桌面只保留原本 Top Bar 的空間，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 依序顯示系統資訊、媒體與音量上下排列、預留通知區、系統匣。系統區寬度限制為 660px，音量支援拖曳、滾輪與靜音切換。CPU、RAM、GPU 使用率以外、中、內三層同心半圓呈現，展開時每秒更新並平滑過渡；無法取得的數據顯示「—」。Dashboard 高度為 300px，各區頂端對齊，網路狀態收在系統區，媒體與音訊之間有水平分隔線，右側留白供未來通知框使用；系統區左側依序列出 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存，右側為同心半圓；下方一行顯示 SSD 容量條、百分比與已用／總容量（GiB）。媒體優先顯示正在播放的 MPRIS 播放器，提供上一首、播放／暫停與下一首，以及播放時間與可拖曳的進度條（需播放器支援）。音訊區的下拉選單可切換 PipeWire 預設輸出裝置。系統匣支援左鍵啟用、右鍵選單、中鍵與滾輪操作。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。Top Bar 的 layer-shell namespace 為 `quickshell-topbar`；若要使用與 Launcher 相同的模糊效果，需在 compositor 加入對應規則。
+Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，桌面只保留原本 Top Bar 的空間，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 依序顯示系統資訊、媒體與音量上下排列、通知中心、系統匣。系統區寬度限制為 660px，音量支援拖曳、滾輪與靜音切換。CPU、RAM、GPU 使用率以外、中、內三層同心半圓呈現，展開時每秒更新並平滑過渡；無法取得的數據顯示「—」。Dashboard 高度為 300px，各區頂端對齊，網路狀態收在系統區，媒體與音訊之間有水平分隔線，右側為通知歷史列表；系統區左側依序列出 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存，右側為同心半圓；下方一行顯示 SSD 容量條、百分比與已用／總容量（GiB）。媒體優先顯示正在播放的 MPRIS 播放器，提供上一首、播放／暫停與下一首，以及播放時間與可拖曳的進度條（需播放器支援）。音訊區的下拉選單可切換 PipeWire 預設輸出裝置。系統匣支援左鍵啟用、右鍵選單、中鍵與滾輪操作。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。Top Bar 的 layer-shell namespace 為 `quickshell-topbar`；若要使用與 Launcher 相同的模糊效果，需在 compositor 加入對應規則。
 
 IPC 介面：
 
@@ -36,6 +36,12 @@ IPC 介面：
 qs ipc call topbar toggleDashboard
 qs ipc call topbar closeDashboard
 ```
+
+## 通知中心
+
+開啟 Dashboard（Top Bar 的 Dashboard 圖示或 `Super + W`）即可查看通知中心。列表只顯示未讀，同一來源自動合成一疊，顯示最新訊息與未讀數量；點擊堆疊可展開個別通知，再點擊通知查看完整內文。長內文限制顯示高度，可在內容區捲動。查看內文後，收合通知或切換到另一則便會自動標為已讀並移除；右鍵可直接將單則或整疊標為已讀。標題使用英文，不顯示來源與未讀總數，也沒有勾、叉按鈕。「清除」移除全部歷史，不會關閉正在顯示的通知。圖示依序使用通知提供的圖示、來源應用程式的桌面圖示，最後以向量鈴鐺備援。
+
+歷史開始從通知服務接收的訊息累積，包括已逾時或關閉的通知；同一則通知的更新會替換原紀錄，transient 通知不存入歷史。文字快照及已讀狀態保存在 `Quickshell.stateDir/notification-history.json`，重新啟動後仍可查看，最多保留最新 500 則。通知已關閉後不保留可執行動作。列表在 `dashboard/NotificationCenter.qml`，資料與儲存由 `services/NotificationService.qml` 管理。
 
 ## 視覺設計
 

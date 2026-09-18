@@ -42,7 +42,18 @@ Item {
             const context = getContext("2d")
             begin(context)
 
-            if (root.name === "offline") {
+            if (root.name === "bell") {
+                context.beginPath()
+                context.moveTo(width * 0.22, height * 0.72)
+                context.quadraticCurveTo(width * 0.32, height * 0.60, width * 0.32, height * 0.38)
+                context.arc(width * 0.50, height * 0.38, width * 0.18, Math.PI, 0)
+                context.quadraticCurveTo(width * 0.68, height * 0.60, width * 0.78, height * 0.72)
+                context.closePath()
+                context.stroke()
+                context.beginPath()
+                context.arc(width * 0.50, height * 0.78, width * 0.08, 0, Math.PI)
+                context.stroke()
+            } else if (root.name === "offline") {
                 arc(context, width * 0.42, Math.PI * 1.18, Math.PI * 1.82)
                 arc(context, width * 0.27, Math.PI * 1.18, Math.PI * 1.82)
                 context.beginPath()

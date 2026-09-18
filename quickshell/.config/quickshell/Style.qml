@@ -93,6 +93,7 @@ QtObject {
         readonly property int expandDuration: 500
         readonly property int detailMaxLines: 4
         readonly property int detailMaxHeight: 100
+        readonly property int historyDetailMaxHeight: 160
     }
 
     readonly property var topBar: QtObject {
