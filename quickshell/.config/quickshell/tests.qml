@@ -4,6 +4,7 @@ import "services"
 import "launcher"
 import "components"
 import "examples"
+import "inputmethod"
 
 ShellRoot {
     id: testRoot
@@ -11,6 +12,7 @@ ShellRoot {
     property int closeRequests: 0
     property var launched: null
     property string command: ""
+    property int candidatePages: 0
     property var entries: [
         { id: "beta", name: "Beta", genericName: "Editor", keywords: ["code"], noDisplay: false },
         { id: "alpha", name: "Alpha", genericName: "", keywords: [], noDisplay: false },
@@ -32,6 +34,14 @@ ShellRoot {
     AudioService { id: audioService }
     NetworkService { id: networkService }
     ClockService { id: clockService }
+    InputMethodService { id: ime; enabled: false }
+    AnimatedVisibility { id: popupVisibility; duration: testTheme.motion.fastDuration }
+    PopupPlacement {
+        id: placement
+        availableWidth: 1000; availableHeight: 800
+        popupWidth: 240; popupHeight: 300
+        cursorValid: true; cursorX: 980; cursorBottom: 780; cursorTop: 760
+    }
 
     Item {
         id: host
@@ -49,6 +59,18 @@ ShellRoot {
         Separator { id: horizontal; theme: testTheme; width: host.width }
         Separator { id: vertical; theme: testTheme; vertical: true; length: 20 }
         AudioPanel { id: example; theme: testTheme; audio: audioService }
+        CandidatePanel { id: imePanel; theme: testTheme; inputMethod: ime }
+        RevealSurface {
+            id: reveal
+            theme: testTheme; shown: popupVisibility.shown
+            expandedWidth: 250; expandedHeight: 150
+        }
+        CandidateList {
+            id: imeList
+            theme: testTheme
+            width: 250
+            onPageRequested: direction => testRoot.candidatePages += direction
+        }
     }
 
     function check(condition, message) {
@@ -62,6 +84,31 @@ ShellRoot {
         interval: 100
         running: true
         onTriggered: {
+            popupVisibility.requestedVisible = true
+            const candidateItems = []
+            for (let i = 0; i < 10; ++i)
+                candidateItems.push({ label: String(i + 1), text: "候選 " + i, selectable: true })
+            imeList.candidates = candidateItems
+            imeList.selectedIndex = 9
+            candidateScrollCheck.restart()
+            testRoot.check(!ime.visible && !ime.running, "disabled input method does not claim desktop service")
+            ime.snapshot = { connected: true, showPreedit: true, preedit: "ㄓㄨㄥ",
+                showCandidates: true, candidates: [
+                    { label: "1", text: "中文", selectable: true },
+                    { label: "2", text: "中午", selectable: true }], selectedIndex: 1,
+                hasPrev: false, hasNext: true, layout: 0 }
+            testRoot.check(ime.visible && ime.preedit === "ㄓㄨㄥ" && ime.candidates.length === 2
+                && ime.selectedIndex === 1 && ime.hasNext, "input method maps composition and candidates")
+            const originalCandidates = ime.candidates
+            ime.applySnapshot(JSON.parse(JSON.stringify(ime.snapshot)))
+            testRoot.check(ime.candidates === originalCandidates,
+                "caret-only snapshots preserve candidate model identity")
+            imeCheck.restart()
+            testRoot.check(placement.x === 752 && placement.y === 454,
+                "popup clamps at right edge and flips above caret")
+            placement.cursorValid = false
+            testRoot.check(placement.x === 380 && placement.y === 492,
+                "popup has deterministic fallback when caret is unavailable")
             testRoot.check(field.height === testTheme.launcher.searchHeight, "search field keeps height")
             testRoot.check(list.height === testTheme.launcher.emptyResultHeight, "empty list keeps height")
             testRoot.check(horizontal.height === 1 && vertical.width === 1 && vertical.height === 20,
@@ -112,6 +159,51 @@ ShellRoot {
         }
     }
 
+    Timer {
+        id: candidateScrollCheck
+        interval: 250
+        onTriggered: {
+            testRoot.check(imeList.height === testTheme.inputMethod.maxVisibleRows * testTheme.inputMethod.rowHeight,
+                "candidate list limits viewport to seven rows")
+            testRoot.check(Math.abs(imeList.contentY - 120) < 1,
+                "moving candidate selection smoothly reveals bottom rows")
+            testRoot.check(popupVisibility.mounted && popupVisibility.shown && Math.abs(reveal.width - 250) < 1,
+                "popup mounts and finishes shell reveal animation")
+            imeList.handleWheel({ angleDelta: { x: 0, y: 120 }, pixelDelta: { x: 0, y: 0 } })
+            testRoot.check(testRoot.candidatePages === 0, "vertical wheel never pages candidates")
+            imeList.handleWheel({ angleDelta: { x: -120, y: 0 }, pixelDelta: { x: 0, y: 0 } })
+            testRoot.check(testRoot.candidatePages === 1, "horizontal wheel pages candidates")
+            popupVisibility.requestedVisible = false
+            testRoot.check(popupVisibility.mounted && !popupVisibility.shown,
+                "popup stays mounted throughout close animation")
+            candidateCloseCheck.restart()
+        }
+    }
+    Timer {
+        id: candidateCloseCheck
+        interval: 250
+        onTriggered: {
+            testRoot.check(Math.abs(imeList.contentY - 80) < 1,
+                "vertical wheel scrolls exactly one candidate row")
+            imeList.candidates = JSON.parse(JSON.stringify(imeList.candidates))
+            testRoot.check(Math.abs(imeList.contentY - 80) < 1,
+                "same-page snapshots do not rewind candidate scrolling")
+            testRoot.check(!popupVisibility.mounted && reveal.width === 0 && reveal.opacity === 0,
+                "popup unmounts after close animation completes")
+        }
+    }
+    Timer {
+        id: imeCheck
+        interval: 30
+        onTriggered: {
+            testRoot.check(imePanel.implicitWidth >= testTheme.inputMethod.minWidth
+                && imePanel.implicitHeight >= 80, "candidate panel composes reusable modules: "
+                    + imePanel.implicitWidth + " x " + imePanel.implicitHeight)
+            ime.snapshot = { connected: false }
+            testRoot.check(!ime.visible && ime.candidates.length === 0 && ime.preedit === "",
+                "backend disconnect hides stale input method data")
+        }
+    }
     Timer {
         id: scrollSetup
         interval: 300

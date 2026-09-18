@@ -39,3 +39,13 @@ hl.layer_rule({
     xray = true,
     ignore_alpha = 0.01,
 })
+
+hl.layer_rule({
+    name = "quickshell-inputmethod-glass",
+    match = {
+        namespace = "^quickshell-inputmethod$",
+    },
+    blur = true,
+    xray = true,
+    ignore_alpha = 0.01,
+})

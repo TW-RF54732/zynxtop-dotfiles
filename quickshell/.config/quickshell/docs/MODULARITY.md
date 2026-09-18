@@ -2,6 +2,10 @@
 
 使用 QML 直接組裝；主題和系統服務由 `shell.qml` 建立一次，再注入面板。新增面板不需要自行讀取 Pipewire、Networking 或 Hyprland，也不需要複製現有樣式。
 
+中文候選框新增通用 `TextButton`、`PopupPlacement`、`JsonProcessService`，以及可獨立組裝的候選字元件；介面與 Wayland 範圍見 [INPUT_METHOD.md](INPUT_METHOD.md)。
+
+動畫另抽出 `AnimatedVisibility`（延後卸載）、`RevealSurface`（中央展開與尺寸動畫）、`AnimatedListView`（捲動、選中項目可見性與回彈）。輸入法定位由獨立的 Hyprland caret 適配模組提供，QML 畫面不直接存取 compositor 內部物件。
+
 ## 職責與依賴
 
 | 層級 | 職責 | 可以依賴 |

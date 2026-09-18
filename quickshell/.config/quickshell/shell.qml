@@ -8,6 +8,13 @@ ShellRoot {
     NetworkService { id: networkService }
     ClockService { id: clockService }
     ApplicationsService { id: applicationsService }
+    InputMethodService { id: inputMethodService }
+
+    InputMethodWindow {
+        theme: sharedTheme
+        inputMethod: inputMethodService
+        compositor: compositorService
+    }
 
     Launcher { theme: sharedTheme; applications: applicationsService }
     TopBar {

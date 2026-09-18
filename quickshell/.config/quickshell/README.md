@@ -1,5 +1,7 @@
 # Quickshell Desktop Shell
 
+QML 中文候選框已接入入口，沿用共用主題、玻璃容器和服務注入。可重用模組、編譯依賴、停用方式與 Wayland 限制見 [中文候選框文件](docs/INPUT_METHOD.md)。
+
 以 Kitty 的灰黑玻璃風格為基礎，自製搜尋、常用度排序與動畫的 Quickshell 應用程式啟動器。共用設計元件可延伸到 Top Bar 與其他面板。
 
 Top Bar 的功能範圍、互動與預定結構記錄於 [`docs/TOP_BAR_PLAN.md`](docs/TOP_BAR_PLAN.md)。

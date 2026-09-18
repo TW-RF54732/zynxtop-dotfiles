@@ -60,6 +60,19 @@ QtObject {
         readonly property int resultTextSpacing: 2
     }
 
+    readonly property var inputMethod: QtObject {
+        readonly property string fontFamily: "Noto Sans CJK TC"
+        readonly property int fontSize: 20
+        readonly property int minWidth: 0
+        readonly property int maxWidth: 480
+        readonly property int rowHeight: 40
+        readonly property int maxVisibleRows: 7
+        readonly property int padding: 12
+        readonly property int screenMargin: 8
+        readonly property int cursorGap: 6
+        readonly property bool horizontal: false
+    }
+
     readonly property var topBar: QtObject {
         readonly property int height: 48
         readonly property int maxWidth: 2200
