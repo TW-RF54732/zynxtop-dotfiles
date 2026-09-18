@@ -8,6 +8,29 @@ ColumnLayout {
     required property var theme
     readonly property var players: Mpris.players.values
     readonly property var player: players.find(p => p.isPlaying) || players[0] || null
+    // Browsers can briefly omit artwork in later metadata updates for the same video.
+    readonly property string artworkTrackKey: player
+        ? JSON.stringify([String(player.trackUrl || ""), player.trackTitle || "", player.trackArtist || ""])
+        : ""
+    property var artworkPlayer: null
+    property string artworkKey: ""
+    property string artworkUrl: ""
+    function updateArtwork() {
+        if (artworkPlayer !== player || artworkKey !== artworkTrackKey) {
+            artworkPlayer = player
+            artworkKey = artworkTrackKey
+            artworkUrl = ""
+        }
+        if (player && player.trackArtUrl)
+            artworkUrl = String(player.trackArtUrl)
+    }
+    onPlayerChanged: updateArtwork()
+    onArtworkTrackKeyChanged: updateArtwork()
+    Component.onCompleted: updateArtwork()
+    Connections {
+        target: root.player
+        function onTrackArtUrlChanged() { root.updateArtwork() }
+    }
     readonly property bool hasProgress: !!player && player.positionSupported && player.lengthSupported && player.length > 0
     function timeLabel(seconds) {
         const total = Math.max(0, Math.floor(seconds))
@@ -25,8 +48,8 @@ ColumnLayout {
         spacing: 16
         Rectangle {
             implicitWidth: 48; implicitHeight: 48; radius: 5; color: root.theme.colors.frame
-            Image { anchors.fill: parent; source: root.player ? root.player.trackArtUrl : ""; fillMode: Image.PreserveAspectFit; asynchronous: true }
-            MonoText { theme: root.theme; anchors.centerIn: parent; text: "♪"; visible: !root.player || !root.player.trackArtUrl; tone: root.theme.colors.textMuted; font.pixelSize: 28 }
+            Image { id: artwork; anchors.fill: parent; source: root.artworkUrl; fillMode: Image.PreserveAspectFit; asynchronous: true }
+            MonoText { theme: root.theme; anchors.centerIn: parent; text: "♪"; visible: artwork.status !== Image.Ready; tone: root.theme.colors.textMuted; font.pixelSize: 28 }
         }
         ColumnLayout {
             Layout.fillWidth: true
