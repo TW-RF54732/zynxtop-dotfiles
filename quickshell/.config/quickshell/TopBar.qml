@@ -196,7 +196,8 @@ Scope {
                 ActiveWindow {
                     id: activeWindow
                     theme: root.theme
-                    title: monitorContext.title
+                    activeWindow: monitorContext.activeWindow
+                    windows: root.compositor.windows
                     width: Math.max(0, parent.width - 2 * (
                         root.theme.topBar.horizontalPadding
                         + Math.max(leftSection.width + root.theme.topBar.dividerWidth

@@ -5,6 +5,7 @@ import Quickshell.Hyprland
 Scope {
     readonly property var workspaces: Hyprland.workspaces.values
     readonly property var activeWindow: Hyprland.activeToplevel
+    readonly property var windows: Hyprland.toplevels.values
 
     Component.onCompleted: Hyprland.refreshMonitors()
 

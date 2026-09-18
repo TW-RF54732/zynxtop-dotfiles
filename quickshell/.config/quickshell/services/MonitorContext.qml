@@ -27,8 +27,9 @@ QtObject {
         ? workspaces.filter(workspace => root.isSpecialWorkspace(workspace)
             && workspace.id === root.specialWorkspaceId)
         : workspaces.filter(workspace => !root.isSpecialWorkspace(workspace))
-    readonly property string title: compositor.activeWindow !== null
-        && compositor.activeWindow.monitor === monitor ? compositor.activeWindow.title : ""
+    readonly property var activeWindow: compositor.activeWindow !== null
+        && compositor.activeWindow.monitor === monitor ? compositor.activeWindow : null
+    readonly property string title: activeWindow ? activeWindow.title : ""
 
     function focusWorkspace(selector) { compositor.focusWorkspace(selector) }
     function isSpecialWorkspace(workspace) {

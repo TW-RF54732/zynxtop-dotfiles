@@ -5,6 +5,7 @@ import "launcher"
 import "components"
 import "examples"
 import "inputmethod"
+import "topbar"
 
 ShellRoot {
     id: testRoot
@@ -20,6 +21,8 @@ ShellRoot {
     ]
 
     Style { id: testTheme }
+    QtObject { id: trackedWindow; property string title: "Agent working" }
+    QtObject { id: otherWindow; property string title: "Editor" }
     ApplicationsService {
         id: apps
         function search(query, showAll) { return rankEntries(testRoot.entries, query, showAll) }
@@ -48,6 +51,13 @@ ShellRoot {
         width: 720
         height: 600
         SearchField { id: field; theme: testTheme; width: host.width }
+        ActiveWindow {
+            id: windowTitle
+            theme: testTheme
+            width: host.width
+            activeWindow: trackedWindow
+            windows: [trackedWindow, otherWindow]
+        }
         ResultsList {
             id: list
             theme: testTheme
@@ -84,6 +94,26 @@ ShellRoot {
         interval: 100
         running: true
         onTriggered: {
+            testRoot.check(!windowTitle.pinned && windowTitle.title === "Agent working",
+                "window title follows active window by default")
+            windowTitle.togglePin()
+            windowTitle.activeWindow = otherWindow
+            trackedWindow.title = "Agent finished"
+            testRoot.check(windowTitle.pinned && windowTitle.title === "Agent finished",
+                "pinned window keeps updating its title after focus changes")
+            windowTitle.togglePin()
+            testRoot.check(!windowTitle.pinned && windowTitle.title === "Editor",
+                "clicking again restores active window tracking")
+            windowTitle.activeWindow = trackedWindow
+            windowTitle.togglePin()
+            windowTitle.activeWindow = otherWindow
+            windowTitle.windows = [otherWindow]
+            testRoot.check(!windowTitle.pinned && windowTitle.pinnedWindow === null
+                && windowTitle.title === "Editor", "closed pinned window restores active window tracking")
+            windowTitle.activeWindow = null
+            windowTitle.togglePin()
+            testRoot.check(!windowTitle.pinned && !windowTitle.visible,
+                "no active window leaves title hidden and unpinned")
             popupVisibility.requestedVisible = true
             const candidateItems = []
             for (let i = 0; i < 10; ++i)
