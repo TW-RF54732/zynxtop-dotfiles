@@ -1,9 +1,28 @@
 import QtQuick
+import Quickshell
 import Quickshell.Hyprland
 
-QtObject {
+Scope {
     readonly property var workspaces: Hyprland.workspaces.values
     readonly property var activeWindow: Hyprland.activeToplevel
+
+    Component.onCompleted: Hyprland.refreshMonitors()
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "activespecial" || event.name === "activespecialv2")
+                Hyprland.refreshMonitors()
+        }
+    }
+
+    function toggleSpecialWorkspace(name) {
+        const specialName = name === "special" ? "" : name.slice("special:".length)
+        if (Hyprland.usingLua)
+            Hyprland.dispatch("hl.dsp.workspace.toggle_special(" + JSON.stringify(specialName) + ")")
+        else
+            Hyprland.dispatch("togglespecialworkspace " + specialName)
+    }
 
     function monitorFor(screen) {
         return Hyprland.monitorFor(screen)

@@ -68,6 +68,20 @@ Item {
                 context.moveTo(width * 0.90, height * 0.38)
                 context.lineTo(width * 0.70, height * 0.62)
                 context.stroke()
+            } else if (root.name === "star") {
+                const outerRadius = Math.min(width, height) * 0.43
+                const innerRadius = outerRadius * 0.45
+                context.beginPath()
+                for (let i = 0; i < 10; ++i) {
+                    const angle = -Math.PI / 2 + i * Math.PI / 5
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius
+                    const x = width / 2 + Math.cos(angle) * radius
+                    const y = height / 2 + Math.sin(angle) * radius
+                    if (i === 0) context.moveTo(x, y)
+                    else context.lineTo(x, y)
+                }
+                context.closePath()
+                context.stroke()
             } else if (root.name === "dashboard") {
                 const size = width * 0.27
                 const gap = width * 0.15

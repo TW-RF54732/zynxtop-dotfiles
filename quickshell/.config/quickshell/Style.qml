@@ -90,6 +90,7 @@ QtObject {
         readonly property int itemSpacing: 10
         readonly property int workspaceSpacing: 2
         readonly property int workspaceSize: 34
+        readonly property real workspaceSelectionOpacity: 0.7
         readonly property int iconSize: root.geometry.iconSize
         readonly property real iconStrokeWidth: root.geometry.iconStrokeWidth
         readonly property int statusHitSize: root.geometry.controlSize
