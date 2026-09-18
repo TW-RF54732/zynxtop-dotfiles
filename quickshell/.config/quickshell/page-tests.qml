@@ -68,7 +68,8 @@ ShellRoot {
         id: tallCheck; interval: 100
         onTriggered: {
             root.tallHeight = pages.implicitHeight
-            root.check(root.tallHeight === theme.inputMethod.maxVisibleRows * theme.inputMethod.rowHeight, "full page keeps seven-row viewport")
+            root.check(root.tallHeight === 10 * theme.inputMethod.rowHeight
+                && pages.activeList.contentY === 0, "all ten candidates fit without scrolling or clipping")
             ime.applySnapshot(root.snapshot("short", true))
             shortCheck.restart()
         }

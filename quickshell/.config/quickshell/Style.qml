@@ -66,7 +66,7 @@ QtObject {
         readonly property int minWidth: 0
         readonly property int maxWidth: 480
         readonly property int rowHeight: 40
-        readonly property int maxVisibleRows: 7
+        readonly property int maxVisibleRows: 10
         readonly property int padding: 12
         readonly property int screenMargin: 8
         readonly property int cursorGap: 6

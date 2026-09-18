@@ -116,10 +116,10 @@ ShellRoot {
                 "no active window leaves title hidden and unpinned")
             popupVisibility.requestedVisible = true
             const candidateItems = []
-            for (let i = 0; i < 10; ++i)
+            for (let i = 0; i < 13; ++i)
                 candidateItems.push({ label: String(i + 1), text: "候選 " + i, selectable: true })
             imeList.candidates = candidateItems
-            imeList.selectedIndex = 9
+            imeList.selectedIndex = 12
             candidateScrollCheck.restart()
             testRoot.check(!ime.visible && !ime.running, "disabled input method does not claim desktop service")
             ime.snapshot = { connected: true, showPreedit: true, preedit: "ㄓㄨㄥ",
@@ -194,7 +194,7 @@ ShellRoot {
         interval: 250
         onTriggered: {
             testRoot.check(imeList.height === testTheme.inputMethod.maxVisibleRows * testTheme.inputMethod.rowHeight,
-                "candidate list limits viewport to seven rows")
+                "candidate list limits viewport to ten rows")
             testRoot.check(Math.abs(imeList.contentY - 120) < 1,
                 "moving candidate selection smoothly reveals bottom rows")
             testRoot.check(popupVisibility.mounted && popupVisibility.shown && Math.abs(reveal.width - 250) < 1,
