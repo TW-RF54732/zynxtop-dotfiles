@@ -102,6 +102,41 @@ Item {
                 context.strokeRect(left + size + gap, top, size, size)
                 context.strokeRect(left, top + size + gap, size, size)
                 context.strokeRect(left + size + gap, top + size + gap, size, size)
+            } else if (root.name === "lock") {
+                context.strokeRect(width * 0.25, height * 0.45, width * 0.5, height * 0.4)
+                context.beginPath()
+                context.moveTo(width * 0.35, height * 0.45)
+                context.lineTo(width * 0.35, height * 0.3)
+                context.arc(width * 0.5, height * 0.3, width * 0.15, Math.PI, 0)
+                context.lineTo(width * 0.65, height * 0.45)
+                context.stroke()
+            } else if (root.name === "power") {
+                context.beginPath()
+                context.arc(width * 0.5, height * 0.52, width * 0.34, -Math.PI * 0.3, Math.PI * 1.3)
+                context.stroke()
+                context.beginPath()
+                context.moveTo(width * 0.5, height * 0.12)
+                context.lineTo(width * 0.5, height * 0.5)
+                context.stroke()
+            } else if (root.name === "reboot") {
+                context.beginPath()
+                context.arc(width * 0.5, height * 0.5, width * 0.32, -Math.PI * 0.25, Math.PI * 1.5)
+                context.stroke()
+                context.beginPath()
+                context.moveTo(width * 0.34, height * 0.08)
+                context.lineTo(width * 0.5, height * 0.18)
+                context.lineTo(width * 0.36, height * 0.31)
+                context.stroke()
+            } else if (root.name === "hibernate") {
+                for (let i = 0; i < 3; ++i) {
+                    const angle = i * Math.PI / 3
+                    const dx = Math.cos(angle) * width * 0.34
+                    const dy = Math.sin(angle) * height * 0.34
+                    context.beginPath()
+                    context.moveTo(width * 0.5 - dx, height * 0.5 - dy)
+                    context.lineTo(width * 0.5 + dx, height * 0.5 + dy)
+                    context.stroke()
+                }
             } else if (root.name === "sun") {
                 const centerX = width / 2
                 const centerY = height / 2

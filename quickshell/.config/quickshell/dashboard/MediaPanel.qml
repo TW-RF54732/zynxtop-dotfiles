@@ -53,7 +53,7 @@ ColumnLayout {
         }
         ColumnLayout {
             Layout.fillWidth: true
-            MonoText { theme: root.theme; Layout.fillWidth: true; elide: Text.ElideRight; text: root.player ? root.player.trackTitle || root.player.identity : "沒有播放中的媒體" }
+            MonoText { theme: root.theme; Layout.fillWidth: true; elide: Text.ElideRight; text: root.player ? root.player.trackTitle || root.player.identity : "IDLE" }
             MonoText { theme: root.theme; Layout.fillWidth: true; elide: Text.ElideRight; text: root.player ? root.player.trackArtist || root.player.identity : ""; tone: root.theme.colors.textSecondary; font.pixelSize: 12 }
         }
     }

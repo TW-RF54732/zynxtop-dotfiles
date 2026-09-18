@@ -47,7 +47,7 @@ ColumnLayout {
         textRole: "description"
         currentIndex: root.audio.outputs.indexOf(root.audio.sink)
         enabled: root.audio.outputs.length > 0
-        displayText: root.audio.sink ? root.audio.sink.description || root.audio.sink.name : "沒有可用的輸出裝置"
+        displayText: root.audio.sink ? root.audio.sink.description || root.audio.sink.name : "NO OUTPUT"
         onActivated: index => root.audio.selectOutput(root.audio.outputs[index])
         contentItem: MonoText {
             theme: root.theme

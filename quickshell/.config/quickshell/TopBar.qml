@@ -21,6 +21,7 @@ Scope {
     required property ClockService clock
     required property NotificationService notifications
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
+    SystemStatusService { id: systemStatus; enabled: root.dashboardOpen }
 
     IpcHandler {
         target: "topbar"
@@ -122,10 +123,10 @@ Scope {
 
                 Dashboard {
                     theme: root.theme
+                    systemStatus: systemStatus
                     systemStats: systemStats
                     audio: root.audio
                     network: root.network
-                    notifications: root.notifications
                     width: parent.width
                     height: barWindow.dashboardHeight
                     y: barWindow.dashboardReveal - height

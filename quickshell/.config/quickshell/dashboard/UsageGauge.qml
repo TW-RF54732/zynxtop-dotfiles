@@ -12,6 +12,7 @@ Item {
     function percentage(value) {
         return value === undefined || value === null ? "—" : Math.round(value) + "%"
     }
+    readonly property real arcBaseline: height - labels.implicitHeight - 20
     implicitWidth: 330
     implicitHeight: 190
 
@@ -27,27 +28,32 @@ Item {
             onProgressChanged: requestPaint()
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
+            Connections {
+                target: root
+                function onArcBaselineChanged() { ring.requestPaint() }
+            }
             onPaint: {
                 const ctx = getContext("2d")
                 ctx.reset()
-                const radius = Math.min(width / 2 - 12, height - 58) - index * 23
+                const radius = Math.min(width / 2 - 12, root.arcBaseline - 10) - index * 23
                 if (radius <= 0) return
                 ctx.lineWidth = 11
                 ctx.lineCap = "round"
                 ctx.strokeStyle = root.theme.colors.frame
                 ctx.beginPath()
-                ctx.arc(width / 2, height - 48, radius, Math.PI, Math.PI * 2)
+                ctx.arc(width / 2, root.arcBaseline, radius, Math.PI, Math.PI * 2)
                 ctx.stroke()
                 if (progress > 0) {
                     ctx.strokeStyle = root.tones[index]
                     ctx.beginPath()
-                    ctx.arc(width / 2, height - 48, radius, Math.PI, Math.PI + Math.PI * progress)
+                    ctx.arc(width / 2, root.arcBaseline, radius, Math.PI, Math.PI + Math.PI * progress)
                     ctx.stroke()
                 }
             }
         }
     }
     Row {
+        id: labels
         anchors.bottom: parent.bottom
         width: parent.width
         Repeater {

@@ -6,10 +6,10 @@ import "services"
 
 GlassFrame {
     id: root
+    required property SystemStatusService systemStatus
     required property SystemStatsService systemStats
     required property AudioService audio
     required property NetworkService network
-    required property NotificationService notifications
     function diskCapacity() {
         const stats = systemStats.stats
         return stats.diskTotal ? Math.round(stats.diskUsed / 1073741824) + "/"
@@ -26,15 +26,15 @@ GlassFrame {
         anchors.margins: 20
         spacing: 24
         ColumnLayout {
-            Layout.preferredWidth: 660
+            Layout.preferredWidth: 640
             Layout.minimumWidth: 600
-            Layout.maximumWidth: 660
+            Layout.maximumWidth: 640
             Layout.alignment: Qt.AlignTop
             spacing: 12
             MonoText { theme: root.theme; text: "SYSTEM"; tone: root.theme.colors.textSecondary; font.pixelSize: 12 }
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 24
+                spacing: 12
                 ResourceDetails {
                     theme: root.theme
                     stats: root.systemStats.stats
@@ -46,7 +46,7 @@ GlassFrame {
                     stats: root.systemStats.stats
                     Layout.preferredWidth: 300
                     Layout.minimumWidth: 240
-                    Layout.preferredHeight: 175
+                    Layout.preferredHeight: 190
                 }
             }
             RowLayout {
@@ -74,8 +74,15 @@ GlassFrame {
                 Layout.fillWidth: true
                 spacing: 12
                 MonoText { theme: root.theme; Layout.preferredWidth: 52; text: "NET"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
-                MonoText { theme: root.theme; Layout.fillWidth: true; font.pixelSize: 12; tone: root.theme.colors.textSecondary; elide: Text.ElideRight; text: !root.network.available ? "狀態不可用" : root.network.offline ? "離線" : root.network.connectedDevice ? "已連線 · " + root.network.interfaceName : "未連線" }
+                MonoText { theme: root.theme; Layout.fillWidth: true; font.pixelSize: 12; tone: root.theme.colors.textSecondary; elide: Text.ElideRight; text: !root.network.available ? "UNAVAILABLE" : root.network.offline ? "OFFLINE" : root.network.connectedDevice ? "CONNECTED · " + root.network.interfaceName : "DISCONNECTED" }
             }
+        }
+        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredWidth: 280
+            Layout.minimumWidth: 200
+            Layout.alignment: Qt.AlignTop
         }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
         ColumnLayout {
@@ -90,15 +97,23 @@ GlassFrame {
             ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
         }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        NotificationCenter {
-            theme: root.theme
-            notifications: root.notifications
-            Layout.fillWidth: true
+        ColumnLayout {
+            Layout.preferredWidth: 180
+            Layout.minimumWidth: 160
+            Layout.maximumWidth: 200
             Layout.fillHeight: true
-            Layout.minimumWidth: 240
-            Layout.preferredWidth: 520
+            spacing: 10
+            Flickable {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                contentWidth: width
+                contentHeight: tray.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                TrayPanel { id: tray; theme: root.theme; width: parent.width }
+            }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
+            PowerPanel { theme: root.theme; systemStatus: root.systemStatus; Layout.fillWidth: true }
         }
-        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        TrayPanel { theme: root.theme; Layout.preferredWidth: 120; Layout.maximumWidth: 120; Layout.fillHeight: true }
     }
 }

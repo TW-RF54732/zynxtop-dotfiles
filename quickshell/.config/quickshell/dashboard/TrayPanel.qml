@@ -45,5 +45,5 @@ Column {
             }
         }
     }
-    MonoText { theme: root.theme; text: "沒有系統匣項目"; visible: SystemTray.items.values.length === 0; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
+    MonoText { theme: root.theme; text: "EMPTY"; visible: SystemTray.items.values.length === 0; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
 }
