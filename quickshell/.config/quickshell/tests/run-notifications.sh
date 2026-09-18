@@ -43,3 +43,13 @@ if rg -q 'FAIL:|ERROR|TypeError|ReferenceError' "$test_dir/scroll-log"; then exi
 rg -q 'PASS: smooth scroll recovery' "$test_dir/scroll-log"
 rg -q 'PASS: top-down expansion with fixed viewport' "$test_dir/scroll-log"
 rg -q 'PASS: bottom-up collapse retains earlier notifications' "$test_dir/scroll-log"
+
+if ! dbus-run-session -- env XDG_RUNTIME_DIR="$test_dir/runtime" \
+    XDG_STATE_HOME="$test_dir/state" WAYLAND_DISPLAY= QT_QPA_PLATFORM=offscreen \
+    timeout 8s qs -p "$test_dir/config/notification-click-tests.qml" --no-color > "$test_dir/click-log" 2>&1; then
+    cat "$test_dir/click-log"
+    exit 1
+fi
+cat "$test_dir/click-log"
+if rg -q 'FAIL!|FAIL:|ERROR|TypeError|ReferenceError' "$test_dir/click-log"; then exit 1; fi
+rg -q 'PASS: notification single-click handling' "$test_dir/click-log"

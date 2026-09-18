@@ -123,6 +123,16 @@ ColumnLayout {
         if (opening) historyList.holdExpansionPosition()
         expandedSource = opening ? key : ""
     }
+    function openRow(entry) {
+        if (entry.isGroupHeader) {
+            if (expandedSource !== entry.groupKey) toggleGroup(entry.groupKey)
+        } else if (expandedKey !== entry.key) toggleRecord(entry)
+    }
+    function closeRow(entry) {
+        if (entry.isGroupHeader) {
+            if (expandedSource === entry.groupKey) toggleGroup(entry.groupKey)
+        } else markRowRead(entry)
+    }
     function keysForRow(entry) {
         const group = groups.find(group => group.key === entry.groupKey)
         return entry.isGroupHeader && group ? group.records.map(record => record.key) : [entry.key]
@@ -370,16 +380,13 @@ ColumnLayout {
                     textFormat: Text.PlainText
                     elide: Text.ElideRight
                 }
-                MouseArea {
-                    x: 0; y: row.headingHeight
-                    width: parent.width
-                    height: 52 + (row.expanded ? 0 : row.bodyHeight)
-                    cursorShape: Qt.PointingHandCursor
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
+                TapHandler {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.RightButton) root.markRowRead(row.entry)
-                        else if (row.entry.isGroupHeader) root.toggleGroup(row.entry.groupKey)
-                        else root.toggleRecord(row.entry)
+                    gesturePolicy: TapHandler.DragThreshold
+                    onTapped: (eventPoint, button) => {
+                        if (button === Qt.RightButton) root.closeRow(row.entry)
+                        else root.openRow(row.entry)
                     }
                 }
                 Flickable {
@@ -439,7 +446,8 @@ ColumnLayout {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.toggleGroup(row.entry.groupKey)
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: root.closeRow(row.entry)
                     Accessible.name: "收合此來源通知"
                     Accessible.role: Accessible.Button
                 }
