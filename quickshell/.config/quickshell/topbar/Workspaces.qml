@@ -2,49 +2,28 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import "../services"
 import "../components"
 
 Row {
     id: root
 
     required property var theme
-    required property var monitor
+    required property MonitorContext context
     spacing: theme.topBar.workspaceSpacing
 
-    readonly property var visibleWorkspaces: {
-        const items = Hyprland.workspaces.values.filter(workspace =>
-            workspace.id > 0 && workspace.monitor === root.monitor)
-        items.sort((left, right) => left.id - right.id)
-        return items
-    }
-
-    function focusWorkspace(selector) {
-        if (Hyprland.usingLua) {
-            const value = typeof selector === "number"
-                ? selector.toString()
-                : "\"" + selector + "\""
-            Hyprland.dispatch("hl.dsp.focus({ workspace = " + value + " })")
-        } else {
-            Hyprland.dispatch("workspace " + selector)
-        }
-    }
-
     Repeater {
-        model: ScriptModel { values: root.visibleWorkspaces }
+        model: ScriptModel { values: root.context.workspaces }
 
-        delegate: Rectangle {
+        delegate: InteractiveSurface {
             id: workspaceItem
             required property var modelData
 
+            theme: root.theme
             width: root.theme.topBar.workspaceSize
             height: root.theme.topBar.workspaceSize
-            radius: root.theme.geometry.cornerRadius
-            color: modelData.focused ? root.theme.colors.frame : "transparent"
-
-            Behavior on color {
-                ColorAnimation { duration: root.theme.motion.fastDuration }
-            }
+            active: modelData.focused
+            onClicked: root.context.focusWorkspace(modelData.id)
 
             MonoText {
                 theme: root.theme
@@ -57,18 +36,14 @@ Row {
                 font.bold: workspaceItem.modelData.focused
             }
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.focusWorkspace(workspaceItem.modelData.id)
-            }
+
         }
     }
 
     WheelHandler {
         onWheel: event => {
             const direction = event.angleDelta.y > 0 ? -1 : 1
-            root.focusWorkspace(direction > 0 ? "e+1" : "e-1")
+            root.context.stepWorkspace(direction)
         }
     }
 }

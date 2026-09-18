@@ -1,166 +1,58 @@
-# Top Bar 規格與專案結構
+# Top Bar 現行規格與結構
 
-## 目標
+本文件記錄目前實作；模組化保留現有畫面與操作。較早的視覺比較保留於 `topbar-concepts.svg`，不作為現行版面規格。
 
-Top Bar 是常駐的環境提示與最短操作入口。它不承擔完整系統監控或設定；詳細資訊與控制集中在之後的 Dashboard。
+## 版面與視覺
 
-設計原則：
+- 每個螢幕建立一個透明 layer-shell 視窗，內含置中的單一玻璃長條。
+- 長條高度 48px、最大寬度 2200px，左右邊距 24px、頂部邊距 10px、底部預留 8px；視窗高度與 exclusive zone 為 66px。
+- 使用 Kitty `#111318` 衍生的 65% 不透明深色背景、1px 低對比邊框、5px 圓角；模糊與 xray 由 compositor 提供。
+- 左側為該螢幕的正數工作區；中央為目前聚焦且屬於該螢幕的視窗標題；右側依序為日期時間、異常狀態及 Dashboard 入口。
+- 視窗標題相對整條 Bar 置中，依左右區塊中較寬者限制可用寬度。過長時單行省略，沒有標題時隱藏。
+- 日期與時間維持右側資訊群組，並非螢幕正中央。日期格式為 `ddd  MM/dd`，24 小時時間格式為 `hh:mm`；沿用現有 UTC 時間轉換。
+- 日間 06:00–17:59 顯示太陽，其餘顯示月亮。只使用共用 MonoIcon，不顯示應用程式品牌圖示。
+- 斷網及靜音才顯示對應圖示；恢復正常或後端不可用時不保留空位。
+- 目前工作區與 Dashboard 開啟狀態使用共用 frame 色反白，不新增 hover 或循環動畫。
+- 工作區變更時，底部執行一次方向掃線，維持 400ms 與既有 easing。
 
-- **一眼讀完**：正常狀態下只保留工作區、目前視窗與時間。
-- **狀態例外才打擾**：斷網、靜音等情況才增加提示。
-- **固定位置**：左右區塊內容改變時，時鐘仍維持螢幕正中央。
-- **一次點擊到 Dashboard**：狀態提示可作為 Dashboard 的入口，但不在 Bar 內展開複雜選單。
-- **鍵盤優先、滑鼠可用**：工作區切換沿用 compositor 快捷鍵；Bar 只提供簡單點擊與滾輪操作。
-- **統一符號語言**：系統狀態使用同一套單色、可換色 icon；不顯示應用程式品牌圖標或帶固定色彩的圖像。
+## 操作
 
-## 已選設計：單一玻璃長條
+| 元件 | 點擊 | 滾輪 |
+| --- | --- | --- |
+| 工作區 | 切換工作區 | 切換前後已有工作區 |
+| 視窗標題 | 無 | 無 |
+| 日期時間 | 無 | 無 |
+| 離線提示 | 無 | 無 |
+| 靜音提示 | 解除靜音 | 每次調整 5% 輸出音量，限制在 0–100% |
+| Dashboard 入口 | 切換共用開關狀態 | 無 |
 
-Top Bar 採用單一、連續的大型浮空玻璃島，置中並限制超寬螢幕上的最大寬度。這是正式實作方向；其他視覺方案只保留在 `topbar-concepts.svg` 作為比較紀錄。
+Dashboard 尚未實作，入口目前只切換反白狀態。沒有 tooltip、日期頁面或通知功能；這些屬於後續功能，不包含在本次重構。
 
-```text
-╭────────────────────────────────────────────────────────────╮
-│  1  2  [3]  Firefox             14:32             ◌  ◫    │
-╰────────────────────────────────────────────────────────────╯
+保留 `quickshell-topbar` namespace，以及以下 IPC：
+
+```sh
+qs ipc call topbar toggleDashboard
+qs ipc call topbar closeDashboard
 ```
 
-- 容器置中浮於螢幕頂部，高度 `48px`、最大寬度 `2200px`，以超寬桌機螢幕的舒適閱讀為準。
-- 使用 Kitty `#111318` 衍生的 65% 不透明深色玻璃背景，交給 Hyprland 全域 blur 與 xray；四邊使用低對比 `1px` 邊界，並以 `5px` 圓角形成單一島體。
-- 左區靠左排列工作區；目前視窗標題使用中間全部彈性寬度。
-- 右區將日期、時間、異常狀態及 Dashboard 入口收成單一資訊群組。
-- 過長的視窗標題到達右側資訊群組前縮短並省略。
-- 正常狀態不顯示空的狀態位置；右側至少保留 Dashboard 入口。
-- 整條 Bar 共用同一個邊框，不為每個項目額外加框。只有目前工作區與 Dashboard 開啟狀態使用反白背景。
+Bar 不取得鍵盤焦點。全螢幕顯示規則由 compositor 決定，目前沒有自動隱藏動畫。
 
-## 第一階段涵蓋項目
+## 模組職責
 
-### 左側：工作環境
+- `shell.qml` 建立共用 Style、CompositorService、AudioService、NetworkService、ClockService 及 ApplicationsService，注入各面板。
+- `TopBar.qml` 建立每個螢幕的視窗與 MonitorContext，處理版面、工作區掃線、IPC 與共用 Dashboard 狀態。
+- `topbar/` 元件接受主題、服務／資料，只負責呈現與最小互動，不直接匯入系統後端。
+- `services/` 集中包裝 Hyprland、Networking、Pipewire 與 SystemClock；Dashboard 可重用相同服務。
+- `components/` 提供 GlassFrame、MonoText、MonoIcon、Separator、InteractiveSurface 與 IconButton，統一外觀與操作介面。
+- `Style.qml` 集中現有顏色、尺寸與動畫；Top Bar 細框與 Launcher 厚框仍保留各自的設計參數。
 
-1. **工作區指示器**
-   - 以數字文字顯示已使用的工作區與目前工作區，例如 `1  2  [3]`。
-   - 非目前、無視窗的工作區不顯示。
-   - 目前工作區只用統一的實心底色與文字色標示。
-   - 點擊切換工作區，滾輪切換前後工作區。
+跨面板組裝及服務介面見 [`MODULARITY.md`](MODULARITY.md)。
 
-2. **目前視窗標題**
-   - 只顯示目前聚焦視窗的應用程式名稱或短標題。
-   - 不顯示 Firefox、VS Code 等應用程式自身的圖標。
-   - 單行省略，不能把中央時鐘推離中心。
-   - 桌面無聚焦視窗時隱藏，不顯示替代文字。
+## 驗收
 
-### 中央：時間
-
-1. **24 小時制時鐘**，預設格式 `HH:mm`。
-2. 日期平時不佔常駐空間；滑鼠停留時以 tooltip 顯示完整日期。
-3. 點擊時鐘開啟 Dashboard 的日期／行程頁；Dashboard 尚未完成前不產生動作。
-
-### 右側：狀態與入口
-
-1. **異常狀態列**
-   - 網路中斷時顯示單色離線 icon。
-   - 音訊靜音時顯示單色靜音 icon。
-   - 有待處理通知時顯示單色通知 icon；第一階段先不啟用。
-   - 多個異常依嚴重程度固定排序，避免跳動。
-
-2. **Dashboard 入口**
-   - 最右側保留固定的單色 Dashboard icon。
-   - 點擊切換 Dashboard；異常狀態 icon 可直接打開對應頁。
-
-## 不放入 Top Bar
-
-以下內容放入 Dashboard，避免長時間佔用注意力：
-
-- CPU、記憶體、溫度、磁碟、網路流量等即時監控。
-- 音量與亮度滑桿、媒體播放器完整控制。
-- 網路、VPN 詳細狀態及開關。
-- 行事曆、天氣、通知內容。
-- 登出、重新啟動、關機等電源操作。
-- 常駐應用程式托盤；如日後確有必要，改成 Dashboard 內的托盤頁。
-
-媒體播放是候選功能：第一階段只在 Dashboard 呈現。實際使用後若經常需要快速查看曲目，再加入「播放時才出現」的中央次要文字。
-
-## 視覺規格
-
-- Top Bar 使用透明的全寬 layer-shell 視窗，內含單一玻璃長條，內容分成左、中、右三個區域。
-- 高度 `34px`，螢幕左右與頂部留 `8px`；保留視窗最大化時的呼吸空間。
-- 沿用 `Style.qml` 的灰黑玻璃色盤與 JetBrains Mono Nerd Font Mono 字體。
-- 文字使用相同字型、字重與基準線；icon 使用同一套線寬、尺寸與視覺比例。
-- Icon 必須接受主題色，例如 `textPrimary`、`textSecondary` 或警示色；不能帶有不可覆寫的原生顏色。
-- 不使用彩色 emoji、彩色 PNG、應用程式圖標或品牌標誌。優先使用專案內的單色向量資產，並由共用元件統一著色。
-- Top Bar 背景提高不透明度，在保留模糊的同時維持深色基調。浮動表面保留螢幕邊距，四邊使用 `1px` 低對比邊界。
-- 一般文字使用次要文字色；目前工作區、時間與警示使用主要文字色。
-- 選中與開啟狀態只改變背景、文字色或 icon 色，不切換成另一種視覺風格。
-- 正常狀態不做循環動畫。內容出現或消失只使用短淡入淡出；緊急狀態也不閃爍。
-- 切換工作區時，底部以一次性掃線表示方向，時間與曲線對齊 Hyprland `workspaces` 動畫。
-- 左右區塊各自限制最大寬度，中央時鐘以視窗本身為基準置中，而非以剩餘空間置中。
-
-## 互動與顯示規則
-
-| 元件 | 左鍵 | 滾輪 | Tooltip |
-| --- | --- | --- | --- |
-| 工作區 | 切換到該工作區 | 前後切換 | 工作區編號／名稱 |
-| 視窗標題 | 無 | 無 | 完整標題 |
-| 時鐘 | 開啟 Dashboard 日期頁 | 無 | 完整日期 |
-| 異常狀態 icon | 開啟 Dashboard 對應頁 | 靜音 icon 可調音量 | 原因與數值 |
-| Dashboard 入口 | 開關 Dashboard | 無 | `Dashboard` |
-
-面板本身設定 exclusive zone，避免一般視窗覆蓋 Top Bar。全螢幕視窗時由 compositor 決定是否隱藏；第一階段不加入自動隱藏動畫。
-
-## 專案結構
-
-先保持結構扁平，只拆出會獨立讀取狀態或重複使用的元件：
-
-```text
-.
-├── shell.qml
-├── Launcher.qml
-├── TopBar.qml
-├── Style.qml
-├── components/
-│   ├── GlassFrame.qml
-│   ├── InsetHighlight.qml
-│   ├── MonoIcon.qml
-│   ├── MonoText.qml
-│   ├── Separator.qml
-│   └── Tooltip.qml
-├── topbar/
-│   ├── Workspaces.qml
-│   ├── ActiveWindow.qml
-│   ├── Clock.qml
-│   ├── StatusIndicators.qml
-│   └── DashboardTrigger.qml
-└── services/
-    ├── CompositorService.qml
-    ├── NetworkService.qml
-    ├── AudioService.qml
-    └── NotificationService.qml
-```
-
-### 職責邊界
-
-- `TopBar.qml`：建立每個螢幕的面板、三區版面、尺寸與 layer-shell 行為。
-- `topbar/*.qml`：只處理呈現和最小互動，不直接執行系統查詢。
-- `services/*.qml`：把 Quickshell／compositor API 轉成穩定屬性與操作，未來 Dashboard 共用同一批狀態。
-- `Style.qml`：新增 `topBar` 尺寸及狀態色，不把版面常數散落到各元件。
-- `shell.qml`：只組合 `Launcher`、`TopBar`，之後再加入 `Dashboard`。
-
-`MonoIcon.qml` 是所有 Bar icon 的唯一入口，統一尺寸、顏色、透明度與狀態切換。服務檔應在確定目前環境使用的 compositor、網路、音訊與通知介面後逐一加入。第一階段可以先完成 `CompositorService` 與時鐘；其他服務若尚未接通，對應狀態 icon 直接不顯示。
-
-## 建議實作順序
-
-1. 建立 `TopBar.qml`、三區固定版面與 `Style.topBar` token。
-2. 接上工作區與目前視窗，確認多螢幕及長標題行為。
-3. 加入時鐘、tooltip 與 Dashboard 空入口。
-4. 依序接上音訊、網路和通知的異常狀態。
-5. 實機檢查全螢幕、最大化、不同縮放比例與螢幕熱插拔。
-
-## 驗收條件
-
-- 正常桌面狀態只看到工作區、目前視窗、時間和 Dashboard 入口。
-- 左右內容長度改變時，時間的水平位置不動。
-- 沒有聚焦視窗或沒有可報告的狀態時，不留下空白 placeholder。
-- 斷網與靜音能以單色 icon 各自出現，恢復正常後自動消失。
-- 所有 icon 都能由 `Style.qml` 改色，沒有 emoji 或品牌原色混入。
-- 目前視窗只顯示文字，不顯示應用程式品牌圖標。
-- 所有截斷文字均可透過 tooltip 讀取完整內容。
-- 各螢幕只顯示與該螢幕相關的工作區／視窗資訊，且不會重複搶占輸入焦點。
-- Bar 與 Launcher 可同時運作，IPC 名稱及 layer-shell namespace 不衝突。
+- 重構前後外觀、位置、尺寸、時間格式與操作相同。
+- 多螢幕工作區／視窗資訊仍以各螢幕 MonitorContext 為準；狀態服務只有一份。
+- 長標題不與右側資訊群組重疊，空標題或正常系統狀態沒有 placeholder。
+- 靜音及離線提示隨實際狀態更新，音訊後端切換時追蹤新的預設 sink。
+- Dashboard 狀態在所有螢幕同步，IPC 名稱及 namespace 維持不變。
+- Launcher 與 Top Bar 可一起載入，沒有新的 QML 錯誤或焦點衝突。

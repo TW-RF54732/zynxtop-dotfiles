@@ -2,17 +2,22 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import "topbar"
+import "components"
+import "services"
 
 Scope {
     id: root
 
     property bool dashboardOpen: false
 
-    Style { id: style }
+    required property var theme
+    required property CompositorService compositor
+    required property AudioService audio
+    required property NetworkService network
+    required property ClockService clock
 
     IpcHandler {
         target: "topbar"
@@ -27,15 +32,18 @@ Scope {
             id: barWindow
             required property var modelData
 
-            readonly property var monitor: Hyprland.monitorFor(screen)
+            MonitorContext {
+                id: monitorContext
+                compositor: root.compositor
+                screen: barWindow.screen
+            }
             property int lastWorkspaceId: -1
 
             function handleWorkspaceChange() {
-                const workspace = monitor ? monitor.activeWorkspace : null
-                if (!workspace || workspace.id <= 0)
+                const nextId = monitorContext.activeWorkspaceId
+                if (nextId <= 0)
                     return
 
-                const nextId = workspace.id
                 if (lastWorkspaceId < 0) {
                     lastWorkspaceId = nextId
                     return
@@ -50,20 +58,21 @@ Scope {
             Component.onCompleted: handleWorkspaceChange()
 
             Connections {
-                target: barWindow.monitor
-                function onActiveWorkspaceChanged() { barWindow.handleWorkspaceChange() }
+                target: monitorContext
+                function onActiveWorkspaceIdChanged() { barWindow.handleWorkspaceChange() }
             }
 
             screen: modelData
-            implicitHeight: style.topBar.windowHeight
+            implicitHeight: root.theme.topBar.windowHeight
             anchors { top: true; left: true; right: true }
-            exclusiveZone: style.topBar.windowHeight
+            exclusiveZone: root.theme.topBar.windowHeight
             focusable: false
             color: "transparent"
             WlrLayershell.namespace: "quickshell-topbar"
 
-            Rectangle {
+            GlassFrame {
                 id: surface
+                theme: root.theme
 
                 function showWorkspaceSweep(towardRight) {
                     workspaceSweep.stop()
@@ -79,25 +88,25 @@ Scope {
 
                 anchors {
                     top: parent.top
-                    topMargin: style.topBar.topMargin
+                    topMargin: root.theme.topBar.topMargin
                     horizontalCenter: parent.horizontalCenter
                 }
-                width: Math.min(parent.width - style.topBar.sideMargin * 2,
-                                style.topBar.maxWidth)
-                height: style.topBar.height
-                radius: style.topBar.radius
-                color: style.colors.topBarSurface
-                border.width: style.topBar.dividerWidth
-                border.color: style.colors.separator
+                width: Math.min(parent.width - root.theme.topBar.sideMargin * 2,
+                                root.theme.topBar.maxWidth)
+                height: root.theme.topBar.height
+                radius: root.theme.topBar.radius
+                color: root.theme.colors.topBarSurface
+                border.width: root.theme.topBar.dividerWidth
+                border.color: root.theme.colors.separator
                 antialiasing: true
                 clip: true
 
                 Rectangle {
                     id: workspaceSweepLine
                     anchors.bottom: parent.bottom
-                    width: parent.width * style.topBar.workspaceSweepWidth
-                    height: style.topBar.workspaceSweepHeight
-                    color: style.colors.textSecondary
+                    width: parent.width * root.theme.topBar.workspaceSweepWidth
+                    height: root.theme.topBar.workspaceSweepHeight
+                    color: root.theme.colors.textSecondary
                     opacity: 0
                     z: 2
                 }
@@ -106,7 +115,7 @@ Scope {
                     id: workspaceSweep
                     target: workspaceSweepLine
                     property: "x"
-                    duration: style.topBar.workspaceSweepDuration
+                    duration: root.theme.topBar.workspaceSweepDuration
                     easing.type: Easing.BezierSpline
                     easing.bezierCurve: [0.23, 1, 0.32, 1, 1, 1]
                     onFinished: workspaceSweepLine.opacity = 0
@@ -116,39 +125,41 @@ Scope {
                     id: leftSection
                     anchors {
                         left: parent.left
-                        leftMargin: style.topBar.horizontalPadding
+                        leftMargin: root.theme.topBar.horizontalPadding
                         top: parent.top
                         bottom: parent.bottom
                     }
-                    spacing: style.topBar.itemSpacing
+                    spacing: root.theme.topBar.itemSpacing
 
                     Workspaces {
-                        theme: style
-                        monitor: barWindow.monitor
+                        theme: root.theme
+                        context: monitorContext
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                 }
 
-                Rectangle {
+                Separator {
+                    theme: root.theme
+                    vertical: true
                     anchors.left: leftSection.right
-                    anchors.leftMargin: style.topBar.itemSpacing
+                    anchors.leftMargin: root.theme.topBar.itemSpacing
                     anchors.verticalCenter: parent.verticalCenter
-                    width: style.topBar.dividerWidth
-                    height: style.topBar.dividerHeight
-                    color: style.colors.separator
+                    width: root.theme.topBar.dividerWidth
+                    height: root.theme.topBar.dividerHeight
+                    color: root.theme.colors.separator
                     visible: activeWindow.visible
                 }
 
                 ActiveWindow {
                     id: activeWindow
-                    theme: style
-                    monitor: barWindow.monitor
+                    theme: root.theme
+                    title: monitorContext.title
                     width: Math.max(0, parent.width - 2 * (
-                        style.topBar.horizontalPadding
-                        + Math.max(leftSection.width + style.topBar.dividerWidth
-                                   + style.topBar.itemSpacing, rightSection.width)
-                        + style.topBar.itemSpacing))
+                        root.theme.topBar.horizontalPadding
+                        + Math.max(leftSection.width + root.theme.topBar.dividerWidth
+                                   + root.theme.topBar.itemSpacing, rightSection.width)
+                        + root.theme.topBar.itemSpacing))
                     anchors {
                         horizontalCenter: parent.horizontalCenter
                         top: parent.top
@@ -160,31 +171,36 @@ Scope {
                     id: rightSection
                     anchors {
                         right: parent.right
-                        rightMargin: style.topBar.horizontalPadding
+                        rightMargin: root.theme.topBar.horizontalPadding
                         top: parent.top
                         bottom: parent.bottom
                     }
-                    spacing: style.topBar.itemSpacing
+                    spacing: root.theme.topBar.itemSpacing
 
                     Clock {
-                        theme: style
+                        theme: root.theme
+                        clock: root.clock
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    Rectangle {
+                    Separator {
+                        theme: root.theme
+                        vertical: true
                         anchors.verticalCenter: parent.verticalCenter
-                        width: style.topBar.dividerWidth
-                        height: style.topBar.dividerHeight
-                        color: style.colors.separator
+                        width: root.theme.topBar.dividerWidth
+                        height: root.theme.topBar.dividerHeight
+                        color: root.theme.colors.separator
                     }
 
                     StatusIndicators {
-                        theme: style
+                        theme: root.theme
+                        audio: root.audio
+                        network: root.network
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     DashboardTrigger {
-                        theme: style
+                        theme: root.theme
                         active: root.dashboardOpen
                         anchors.verticalCenter: parent.verticalCenter
                         onToggled: root.dashboardOpen = !root.dashboardOpen

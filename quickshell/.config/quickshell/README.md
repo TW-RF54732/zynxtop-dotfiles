@@ -75,9 +75,11 @@ IPC 介面：
 
 ```sh
 qs ipc call launcher toggle
-qs ipc call launcher show
+qs ipc call -- launcher show
 qs ipc call launcher hide
 ```
+
+`show` 與 Quickshell CLI 子命令同名，因此以 `--` 分隔，確保呼叫 Launcher 方法。
 
 目前使用的 Hyprland Lua 快捷鍵設定為：
 
@@ -102,7 +104,7 @@ hl.layer_rule({
 
 ## 搜尋與常用度
 
-應用程式來源是 Quickshell 的 `DesktopEntries.applications`，搜尋與排序由 `Launcher.qml` 中的 JavaScript 實作。
+應用程式來源是 Quickshell 的 `DesktopEntries.applications`，搜尋、排序、常用度保存與啟動由 `services/ApplicationsService.qml` 提供；Launcher 控制器與畫面透過注入的服務操作。
 
 搜尋依序評估完全相同、名稱開頭、單字開頭、名稱包含、通用名稱、關鍵字，以及依序出現的模糊字元匹配。符合搜尋的項目再加入常用度加權：
 
@@ -144,21 +146,24 @@ Categories=Utility;
 
 ## 設計系統與檔案結構
 
+主題與服務由入口建立一次，透過 QML 屬性注入功能模組。新增面板的介面與完整範例見 [`docs/MODULARITY.md`](docs/MODULARITY.md)。
+
 ```text
 .
-├── shell.qml                 # Quickshell 入口
-├── Launcher.qml              # 搜尋、排序、操作與清單動畫
-├── TopBar.qml                # 多螢幕 Top Bar 與三區版面
-├── Style.qml                 # 共用設計參數
-└── components/
-    ├── GlassFrame.qml        # 灰黑半透明框架
-    ├── InsetHighlight.qml    # 與外框連接的內凹反白
-    ├── MonoIcon.qml          # 可由主題換色的單色狀態圖示
-    ├── MonoText.qml          # 統一等寬文字
-    └── Separator.qml         # 共用分隔線
+├── shell.qml                 # 建立共用主題、服務，組裝面板
+├── Style.qml                 # 統一設計參數
+├── Launcher.qml              # Launcher 視窗、焦點、IPC 與開關動畫
+├── TopBar.qml                # 多螢幕視窗、版面、掃線與 Dashboard 狀態
+├── components/               # 容器、文字、圖示、按鈕、分隔線、反白
+├── services/                 # Compositor、音訊、網路、時鐘、應用程式
+├── launcher/                 # 控制器、輸入框、清單與結果列
+├── topbar/                   # 工作區、視窗標題、時鐘、狀態及 Dashboard 入口
+├── examples/AudioPanel.qml   # 可複製的跨面板組裝範例
+├── tests.qml                 # 不建立桌面視窗的模組 smoke 測試
+└── tests/run-smoke.sh         # 隔離 runtime/state 並驗證使用次數保存
 ```
 
-Top Bar 的內容元件位於 `topbar/`：工作區、目前視窗、時鐘、狀態與 Dashboard 入口各自獨立。
+視覺元件不直接讀取系統服務；功能元件只接收所需的主題、服務、資料及操作訊號。各螢幕使用自己的 MonitorContext，共用同一份系統服務。
 
 `Style.qml` 分成以下區塊：
 
@@ -166,7 +171,7 @@ Top Bar 的內容元件位於 `topbar/`：工作區、目前視窗、時鐘、�
 | --- | --- |
 | `colors` | 面板、外框、分隔線、文字與文字選取色 |
 | `typography` | 字體與字級 |
-| `geometry` | 外框寬度、圓角、內凹弧度與共用留白 |
+| `geometry` | 外框、圓角、內凹弧度、留白及共用按鈕／圖示尺寸 |
 | `motion` | 動畫時間與回彈距離 |
 | `launcher` | Launcher 專用尺寸、位置、圖示與顯示列數 |
 | `topBar` | Top Bar 高度、邊距、文字、圖示與互動區尺寸 |
@@ -183,24 +188,24 @@ QML 的八位色碼採 `#AARRGGBB`，例如背景 `#8f292d33` 的前兩位 `8f` 
 | `edgeBounceDuration` | 120ms | 邊界回彈的單程時間 |
 | `edgeBounceDistance` | 18px | 邊界回彈距離 |
 
-新面板可建立 `Style` 實例，將同一實例傳給共用元件的 `theme`：
+新面板接收入口的主題，將同一實例傳給共用元件的 `theme`：
 
 ```qml
 import QtQuick
 import "components"
 
 Item {
-    Style { id: style }
+    id: root
+    required property var theme
 
     GlassFrame {
-        theme: style
+        theme: root.theme
         width: 300
         height: 60
 
         MonoText {
-            theme: style
+            theme: root.theme
             anchors.centerIn: parent
-            font.pixelSize: style.typography.bodySize
             text: "Quickshell"
         }
     }
@@ -212,7 +217,8 @@ Item {
 ## 檢查與日誌
 
 ```sh
-qmllint Launcher.qml Style.qml components/*.qml
+/usr/lib/qt6/bin/qmllint -I /usr/lib/qt6/qml *.qml components/*.qml launcher/*.qml services/*.qml topbar/*.qml examples/*.qml
+bash tests/run-smoke.sh
 qs log -t 30
 git diff --check
 ```

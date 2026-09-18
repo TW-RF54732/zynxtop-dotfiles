@@ -1,5 +1,5 @@
 import QtQuick
-import Quickshell
+import "../services"
 import "../components"
 
 Row {
@@ -7,25 +7,19 @@ Row {
 
     required property var theme
     spacing: theme.topBar.itemSpacing
-    readonly property date displayDate: new Date(clock.date.getTime()
-        + clock.date.getTimezoneOffset() * 60 * 1000)
-    readonly property bool daytime: displayDate.getHours() >= 6
-        && displayDate.getHours() < 18
-
-    SystemClock {
-        id: clock
-        precision: SystemClock.Minutes
-    }
+    required property ClockService clock
 
     MonoText {
         theme: root.theme
         anchors.verticalCenter: parent.verticalCenter
-        text: Qt.formatDateTime(root.displayDate, "ddd  MM/dd")
+        text: Qt.formatDateTime(root.clock.displayDate, "ddd  MM/dd")
         tone: root.theme.colors.textSecondary
         font.pixelSize: root.theme.topBar.textSize
     }
 
-    Rectangle {
+    Separator {
+        theme: root.theme
+        vertical: true
         anchors.verticalCenter: parent.verticalCenter
         width: root.theme.topBar.dividerWidth
         height: root.theme.topBar.dividerHeight
@@ -33,10 +27,11 @@ Row {
     }
 
     MonoIcon {
+        theme: root.theme
         anchors.verticalCenter: parent.verticalCenter
         width: root.theme.topBar.iconSize
         height: width
-        name: root.daytime ? "sun" : "moon"
+        name: root.clock.daytime ? "sun" : "moon"
         color: root.theme.colors.textSecondary
         lineWidth: root.theme.topBar.iconStrokeWidth
     }
@@ -44,7 +39,7 @@ Row {
     MonoText {
         theme: root.theme
         anchors.verticalCenter: parent.verticalCenter
-        text: Qt.formatDateTime(root.displayDate, "hh:mm")
+        text: Qt.formatDateTime(root.clock.displayDate, "hh:mm")
         tone: root.theme.colors.textPrimary
         font.pixelSize: root.theme.topBar.clockSize
         font.bold: true

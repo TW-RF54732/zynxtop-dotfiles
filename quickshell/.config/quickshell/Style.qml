@@ -1,6 +1,8 @@
 import QtQuick
 
 QtObject {
+    id: root
+
     readonly property var colors: QtObject {
         readonly property color surface: "#c2111318"
         readonly property color topBarSurface: "#a6111318"
@@ -29,6 +31,9 @@ QtObject {
         readonly property int insetCurveRadius: 5
         readonly property int separatorHeight: 1
         readonly property int outerPadding: 24
+        readonly property int controlSize: 38
+        readonly property int iconSize: 21
+        readonly property real iconStrokeWidth: 1.7
     }
 
     readonly property var motion: QtObject {
@@ -66,15 +71,15 @@ QtObject {
         readonly property int itemSpacing: 10
         readonly property int workspaceSpacing: 2
         readonly property int workspaceSize: 34
-        readonly property int iconSize: 21
-        readonly property real iconStrokeWidth: 1.7
-        readonly property int statusHitSize: 38
+        readonly property int iconSize: root.geometry.iconSize
+        readonly property real iconStrokeWidth: root.geometry.iconStrokeWidth
+        readonly property int statusHitSize: root.geometry.controlSize
         readonly property int dividerWidth: 1
         readonly property int dividerHeight: 20
         readonly property real workspaceSweepWidth: 0.2
         readonly property int workspaceSweepHeight: 2
         readonly property int workspaceSweepDuration: 400
-        readonly property int textSize: 16
+        readonly property int textSize: root.typography.bodySize
         readonly property int clockSize: 17
         readonly property int windowHeight: topMargin + height + bottomMargin
     }

@@ -5,4 +5,5 @@ Text {
     property color tone: theme.colors.textPrimary
     color: tone
     font.family: theme.typography.family
+    font.pixelSize: theme.typography.bodySize
 }

@@ -4,11 +4,12 @@ Item {
     id: root
 
     required property string name
-    property color color: "white"
-    property real lineWidth: 1.7
+    property var theme: null
+    property color color: theme ? theme.colors.textSecondary : "white"
+    property real lineWidth: theme ? theme.geometry.iconStrokeWidth : 1.7
 
-    implicitWidth: 18
-    implicitHeight: 18
+    implicitWidth: theme ? theme.geometry.iconSize : 18
+    implicitHeight: implicitWidth
 
     onNameChanged: canvas.requestPaint()
     onColorChanged: canvas.requestPaint()
