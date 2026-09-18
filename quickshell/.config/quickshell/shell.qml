@@ -9,6 +9,7 @@ ShellRoot {
     ClockService { id: clockService }
     ApplicationsService { id: applicationsService }
     InputMethodService { id: inputMethodService }
+    NotificationService { id: notificationService; defaultTimeout: sharedTheme.notifications.defaultTimeout }
 
     InputMethodWindow {
         theme: sharedTheme
@@ -23,5 +24,6 @@ ShellRoot {
         audio: audioService
         network: networkService
         clock: clockService
+        notifications: notificationService
     }
 }

@@ -8,6 +8,12 @@ Top Bar 的功能範圍、互動與預定結構記錄於 [`docs/TOP_BAR_PLAN.md`
 
 ## Top Bar
 
+通知列位於右上角，與 Top Bar 等高。最新通知顯示應用程式 icon 與標題，較早通知向左排列成緊湊的 icon 區段；空間不足時，靠近 bar 的位置顯示 `+N`，代表未顯示的通知數。有通知時 bar 右側自動收窄留出空間，全部關閉後恢復原寬度。滑鼠移到某個 icon 時，該則通知在原本位置橫向展開為 icon 與標題，其他通知縮回 icon，維持通知順序與整列寬度，同一張卡片下方也會展開詳細內文。內文最多 4 行、額外高度上限 100px，過長會截斷；滑鼠移到內文區仍保持展開，空白內文不增加高度。離開後以動畫恢復最新通知展開並收合內文。點擊 `+N` 可依序查看較早通知，通知仍依時間排列；點擊通知執行預設動作（沒有動作則關閉），右鍵關閉該則通知。一般通知預設 16 秒後消失，依應用程式指定的有效時間調整；指定不逾時或未指定時間的緊急通知會保留到關閉。通知同步顯示於各螢幕；尺寸與預設時間可在 `Style.qml` 的 `notifications` 區塊調整。
+
+通知列在同一個 window 內畫出多張 QML 卡片；背景和交疊外框先在共用 Canvas 內以實色依序繪製，後面的卡片邊緣會被前面的遮住，整層最後才套用半透明度，保留卡排輪廓並避免背景疊色；文字與點擊區仍依相鄰卡片的位置裁切。通知列共用 `quickshell-topbar` layer，沿用 Hyprland `quickshell-topbar-glass` 的 `blur`、`xray` 和 `ignore_alpha = 0.01` 規則。通知接收由 `services/NotificationService.qml` 的 Quickshell `NotificationServer` 負責，版面在 `notifications/NotificationStrip.qml`。同一桌面應只啟用一個通知服務；若原本使用 mako 或 dunst，啟用此配置前需停用原服務。可用 `notify-send "測試通知" "通知內容"` 試看，或執行 `bash tests/run-notifications.sh` 驗證堆疊、溢出計數、替換、關閉與逾時。
+
+新通知從螢幕右側外滑入並淡入，通過右側留白後停在通知列。既有卡片保留，被推開時以位置動畫滑到新位置，不會跟著重新播放出場動畫。hover 使用原位橫向展開與文字裁切，避免動畫中反覆重新截斷文字；`Style.qml` 的 `notifications.slideDuration`（320ms）與 `expandDuration`（500ms）可分別調整 popup 與展開速度。
+
 開啟 special workspace 時，工作區區域只顯示該工作區的星星圖示；關閉後恢復一般工作區數字。
 
 Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配合 Hyprland blur 與 xray。Launcher 使用 76% 不透明度，Top Bar 使用 65%，讓浮空島呈現更明顯的模糊。版面針對超寬螢幕排列為工作區、可伸展的目前視窗標題、日期時間與 Dashboard 入口；網路離線和音訊靜音時，右側會增加單色狀態圖示，不顯示應用程式品牌圖標。

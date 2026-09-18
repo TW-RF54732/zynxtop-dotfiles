@@ -79,6 +79,22 @@ QtObject {
         readonly property int animationDuration: 260
     }
 
+    readonly property var notifications: QtObject {
+        readonly property int laneWidth: 360
+        readonly property int cardWidth: 248
+        readonly property int iconWidth: root.topBar.height
+        readonly property int stackStep: iconWidth
+        readonly property int overlap: 12
+        readonly property int padding: 8
+        readonly property int gap: 8
+        readonly property int defaultTimeout: 16000
+        readonly property int hoverCloseDelay: 180
+        readonly property int slideDuration: 320
+        readonly property int expandDuration: 500
+        readonly property int detailMaxLines: 4
+        readonly property int detailMaxHeight: 100
+    }
+
     readonly property var topBar: QtObject {
         readonly property int height: 48
         readonly property int maxWidth: 2200

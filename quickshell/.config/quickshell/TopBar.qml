@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import "topbar"
 import "components"
 import "services"
+import "notifications"
 
 Scope {
     id: root
@@ -18,6 +19,7 @@ Scope {
     required property AudioService audio
     required property NetworkService network
     required property ClockService clock
+    required property NotificationService notifications
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
 
     IpcHandler {
@@ -64,6 +66,15 @@ Scope {
             }
 
             screen: modelData
+            readonly property real normalBarWidth: Math.min(width - root.theme.topBar.sideMargin * 2,
+                root.theme.topBar.maxWidth)
+            readonly property real normalRightSpace: (width - normalBarWidth) / 2
+                - root.theme.topBar.sideMargin - root.theme.notifications.gap
+            readonly property real notificationReserve: root.notifications.notifications.length > 0
+                ? Math.min(Math.max(0, normalBarWidth - Math.max(320,
+                    leftSection.width + rightSection.width + root.theme.topBar.horizontalPadding * 2
+                    + root.theme.topBar.itemSpacing * 4)),
+                    Math.max(0, root.theme.notifications.laneWidth - normalRightSpace)) : 0
             readonly property real dashboardHeight: Math.min(root.theme.dashboard.height,
                 Math.max(0, screen.height - root.theme.topBar.windowHeight
                     - root.theme.topBar.topMargin - root.theme.dashboard.gap))
@@ -80,9 +91,16 @@ Scope {
                 + (dashboardHeight > 0 ? root.theme.dashboard.gap * dashboardReveal / dashboardHeight : 0)
             // Keep the Wayland surface stable; animate only the panel position.
             implicitHeight: root.theme.topBar.windowHeight + dashboardHeight + root.theme.dashboard.gap
+                + root.theme.notifications.detailMaxHeight
             mask: Region {
                 width: barWindow.width
                 height: root.theme.topBar.windowHeight + barWindow.dashboardOffset
+                Region {
+                    x: notificationStrip.x + notificationStrip.detailBounds.left
+                    y: notificationStrip.y + notificationStrip.height
+                    width: notificationStrip.detailBounds.width
+                    height: notificationStrip.visible ? notificationStrip.detailBounds.extra : 0
+                }
             }
             anchors { top: true; left: true; right: true }
             exclusiveZone: root.theme.topBar.windowHeight
@@ -95,6 +113,7 @@ Scope {
                     top: parent.top
                     topMargin: root.theme.topBar.topMargin
                     horizontalCenter: parent.horizontalCenter
+                    horizontalCenterOffset: -barWindow.notificationReserve / 2
                 }
                 width: surface.width
                 height: barWindow.dashboardHeight
@@ -132,9 +151,9 @@ Scope {
                     top: parent.top
                     topMargin: root.theme.topBar.topMargin + barWindow.dashboardOffset
                     horizontalCenter: parent.horizontalCenter
+                    horizontalCenterOffset: -barWindow.notificationReserve / 2
                 }
-                width: Math.min(parent.width - root.theme.topBar.sideMargin * 2,
-                                root.theme.topBar.maxWidth)
+                width: barWindow.normalBarWidth - barWindow.notificationReserve
                 height: root.theme.topBar.height
                 radius: root.theme.topBar.radius
                 color: root.theme.colors.topBarSurface
@@ -249,6 +268,21 @@ Scope {
                         onToggled: root.dashboardOpen = !root.dashboardOpen
                     }
                 }
+            }
+
+            NotificationStrip {
+                id: notificationStrip
+                theme: root.theme
+                notifications: root.notifications.notifications
+                x: surface.x + surface.width + root.theme.notifications.gap
+                y: surface.y
+                width: Math.max(0, barWindow.width - root.theme.topBar.sideMargin - x)
+                height: surface.height
+                screenRight: barWindow.width - x
+                detailMaxHeight: Math.max(0, Math.min(root.theme.notifications.detailMaxHeight,
+                    barWindow.screen.height - y - height - root.theme.topBar.sideMargin))
+                onActivated: notification => root.notifications.activate(notification)
+                onDismissed: notification => notification.dismiss()
             }
         }
     }
