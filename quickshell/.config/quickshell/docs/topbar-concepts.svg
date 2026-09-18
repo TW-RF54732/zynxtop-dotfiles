@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17191d"/>
+      <stop offset="1" stop-color="#20242a"/>
+    </linearGradient>
+    <linearGradient id="desktop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#242930"/>
+      <stop offset="0.55" stop-color="#1d2228"/>
+      <stop offset="1" stop-color="#13171b"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#62666d" stop-opacity=".20"/>
+      <stop offset="1" stop-color="#62666d" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+    <g id="offline" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M2 8c5-5 11-5 16 0M5 11c3-3 7-3 10 0M8.5 14.5c1-1 2-1 3 0M2 2l16 16"/>
+    </g>
+    <g id="muted" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 8h4l5-4v12l-5-4H2zM14 8l5 5M19 8l-5 5"/>
+    </g>
+    <g id="dashboard" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/>
+      <rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/>
+    </g>
+    <style>
+      .heading { font: 600 24px Consolas, monospace; fill: #fff; }
+      .caption { font: 15px Consolas, monospace; fill: #8b929d; }
+      .bartext { font: 16px Consolas, monospace; fill: #abb2bf; dominant-baseline: middle; }
+      .clock { font: 600 16px Consolas, monospace; fill: #fff; dominant-baseline: middle; text-anchor: middle; }
+      .glass { fill: #292d33; fill-opacity: .75; stroke: #555b63; stroke-width: 1; }
+      .selected { fill: #62666d; }
+      .selectedtext { font: 600 15px Consolas, monospace; fill: #fff; text-anchor: middle; dominant-baseline: middle; }
+      .icon { color: #abb2bf; }
+      .warn { color: #fff; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#page)"/>
+  <text x="70" y="58" class="heading">TOP BAR / VISUAL DIRECTIONS</text>
+  <text x="70" y="87" class="caption">same content · same palette · monochrome icons</text>
+
+  <!-- A -->
+  <text x="70" y="145" class="heading">A  單一玻璃長條</text>
+  <text x="70" y="171" class="caption">最完整、最穩定，常駐感較強</text>
+  <g transform="translate(70 195)">
+    <rect width="700" height="300" rx="10" fill="url(#desktop)" stroke="#31363d"/>
+    <circle cx="545" cy="190" r="190" fill="url(#glow)"/>
+    <g filter="url(#shadow)">
+      <rect x="10" y="10" width="680" height="42" rx="5" class="glass"/>
+    </g>
+    <text x="28" y="31" class="bartext">1</text>
+    <text x="54" y="31" class="bartext">2</text>
+    <rect x="77" y="17" width="26" height="28" rx="4" class="selected"/>
+    <text x="90" y="31" class="selectedtext">3</text>
+    <rect x="118" y="22" width="1" height="18" fill="#44484d"/>
+    <text x="133" y="31" class="bartext">Firefox — Quickshell</text>
+    <text x="350" y="31" class="clock">14:32</text>
+    <g transform="translate(599 21) scale(.9)" class="warn"><use href="#muted"/></g>
+    <g transform="translate(653 21) scale(.9)" class="icon"><use href="#dashboard"/></g>
+  </g>
+
+  <!-- B -->
+  <text x="830" y="145" class="heading">B  三段浮島</text>
+  <text x="830" y="171" class="caption">低干擾、留白清楚，推薦方向</text>
+  <g transform="translate(830 195)">
+    <rect width="700" height="300" rx="10" fill="url(#desktop)" stroke="#31363d"/>
+    <circle cx="545" cy="190" r="190" fill="url(#glow)"/>
+    <g filter="url(#shadow)">
+      <rect x="10" y="10" width="292" height="42" rx="5" class="glass"/>
+      <rect x="306" y="10" width="88" height="42" rx="5" class="glass"/>
+      <rect x="610" y="10" width="80" height="42" rx="5" class="glass"/>
+    </g>
+    <text x="28" y="31" class="bartext">1</text>
+    <text x="54" y="31" class="bartext">2</text>
+    <rect x="77" y="17" width="26" height="28" rx="4" class="selected"/>
+    <text x="90" y="31" class="selectedtext">3</text>
+    <rect x="118" y="22" width="1" height="18" fill="#44484d"/>
+    <text x="133" y="31" class="bartext">Firefox — Quickshell</text>
+    <text x="350" y="31" class="clock">14:32</text>
+    <g transform="translate(624 21) scale(.9)" class="warn"><use href="#muted"/></g>
+    <g transform="translate(658 21) scale(.9)" class="icon"><use href="#dashboard"/></g>
+  </g>
+
+  <!-- C -->
+  <text x="70" y="570" class="heading">C  無框文字列</text>
+  <text x="70" y="596" class="caption">最安靜，辨識度會受桌布影響</text>
+  <g transform="translate(70 620)">
+    <rect width="700" height="300" rx="10" fill="url(#desktop)" stroke="#31363d"/>
+    <circle cx="545" cy="190" r="190" fill="url(#glow)"/>
+    <line x1="10" y1="53" x2="690" y2="53" stroke="#44484d" stroke-opacity=".65"/>
+    <text x="25" y="30" class="bartext">1</text>
+    <text x="51" y="30" class="bartext">2</text>
+    <rect x="74" y="16" width="26" height="28" rx="4" class="selected"/>
+    <text x="87" y="30" class="selectedtext">3</text>
+    <text x="116" y="30" class="bartext">Firefox — Quickshell</text>
+    <text x="350" y="30" class="clock">14:32</text>
+    <g transform="translate(625 20) scale(.9)" class="warn"><use href="#muted"/></g>
+    <g transform="translate(663 20) scale(.9)" class="icon"><use href="#dashboard"/></g>
+  </g>
+
+  <!-- D -->
+  <text x="830" y="570" class="heading">D  終端狀態列</text>
+  <text x="830" y="596" class="caption">字元節奏強，偏工具與開發環境</text>
+  <g transform="translate(830 620)">
+    <rect width="700" height="300" rx="10" fill="url(#desktop)" stroke="#31363d"/>
+    <circle cx="545" cy="190" r="190" fill="url(#glow)"/>
+    <g filter="url(#shadow)">
+      <rect x="10" y="10" width="680" height="42" rx="2" class="glass"/>
+    </g>
+    <text x="25" y="31" class="bartext">1</text>
+    <text x="51" y="31" class="bartext">2</text>
+    <rect x="72" y="10" width="34" height="42" class="selected"/>
+    <text x="89" y="31" class="selectedtext">3</text>
+    <text x="119" y="31" class="bartext">│ Firefox — Quickshell</text>
+    <text x="350" y="31" class="clock">14:32</text>
+    <text x="600" y="31" class="bartext">│</text>
+    <g transform="translate(620 21) scale(.9)" class="warn"><use href="#muted"/></g>
+    <g transform="translate(658 21) scale(.9)" class="icon"><use href="#dashboard"/></g>
+  </g>
+</svg>
