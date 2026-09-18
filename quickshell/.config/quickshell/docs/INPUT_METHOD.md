@@ -1,6 +1,6 @@
 # QML 中文候選框
 
-`shell.qml` 建立一個 `InputMethodService`，再將服務、主題和 compositor 注入 `InputMethodWindow`。新酷音仍由 Fcitx 5 處理；組字、提示、候選字、反白與翻頁按鈕由 QML 繪製。候選視窗不接收鍵盤焦點，因此數字選字與輸入法快捷鍵仍交給原應用與 Fcitx。
+`shell.qml` 建立一個 `InputMethodService`，再將服務、主題和 compositor 注入 `InputMethodWindow`。新酷音仍由 Fcitx 5 處理；組字、提示、候選字、反白與翻頁動畫由 QML 繪製。候選視窗不接收鍵盤焦點，因此數字選字與輸入法快捷鍵仍交給原應用與 Fcitx。
 
 ## 模組
 
@@ -71,3 +71,11 @@ qs -p InputMethodPreview.qml
 Smoke 測試涵蓋服務狀態映射、候選面板組裝、斷線隱藏、邊界定位與既有 launcher 回歸。橋接測試使用隔離 D-Bus 和模擬輸入法，驗證中文 snapshot、游標矩形、點選與翻頁往返，不接正式 Fcitx。
 
 協定參考：[Fcitx 5 Kimpanel 原始碼](https://github.com/fcitx/fcitx5/blob/master/src/ui/kimpanel/kimpanel.cpp)、[Fcitx Wayland UI 限制](https://fcitx-im.org/wiki/Theme_Customization/en)。
+
+## 選字面板翻頁
+
+數字快捷鍵顯示在候選列內，沿用輸入法提供的標籤，不顯示頁碼；左右滾輪翻頁時，上一頁向右滑入、下一頁向左滑入。上下選取仍沿用獨立高亮與捲動動畫。
+
+翻頁時保留已顯示的候選區高度，候選較少的頁面用底色補滿；新的第一頁內容或清空候選時重設高度。內部依候選回覆及已見頁面辨識翻頁方向；未見過的非第一頁按向後翻頁推定。
+
+預覽 `qs -p UIPlayground.qml`；左右鍵測試翻頁。隔離測試 `bash tests/run-pages.sh`。

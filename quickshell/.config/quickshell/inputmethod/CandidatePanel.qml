@@ -55,13 +55,16 @@ GlassFrame {
             visible: (root.inputMethod.preedit.length > 0 || root.inputMethod.auxiliary.length > 0)
                 && root.inputMethod.candidates.length > 0
         }
-        CandidateList {
+        CandidatePages {
             id: candidates
             theme: root.theme
             // Like Launcher, draw the inset curves against the full frame width.
             x: -root.inset
             width: root.width
             maximumWidth: root.maximumWidth - root.inset * 2
+            pageNumber: root.inputMethod.pageNumber || 1
+            pageDirection: root.inputMethod.pageDirection || 0
+            pageRevision: root.inputMethod.pageRevision || 0
             candidates: root.inputMethod.candidates
             selectedIndex: root.inputMethod.selectedIndex
             horizontal: root.theme.inputMethod.horizontal

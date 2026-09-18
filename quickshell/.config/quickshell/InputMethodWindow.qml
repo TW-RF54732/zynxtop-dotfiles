@@ -33,6 +33,9 @@ Scope {
         readonly property int selectedIndex: root.retainedSnapshot.selectedIndex ?? -1
         readonly property bool hasPrevious: root.retainedSnapshot.hasPrev === true
         readonly property bool hasNext: root.retainedSnapshot.hasNext === true
+        readonly property int pageNumber: root.retainedSnapshot.pageNumber || 1
+        readonly property int pageRevision: root.retainedSnapshot.pageRevision || 0
+        readonly property int pageDirection: root.retainedSnapshot.pageDirection || 0
         readonly property int layoutHint: root.retainedSnapshot.layout || 0
         function select(index) { root.inputMethod.select(index) }
         function previousPage() { root.inputMethod.previousPage() }

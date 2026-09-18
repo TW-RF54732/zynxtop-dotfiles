@@ -8,6 +8,7 @@ Item {
     property real targetWidth: 0
     property real targetHeight: 0
     property bool inset: false
+    property real leftEdge: theme.geometry.frameWidth
     property bool animate: true
     property int duration: theme.motion.selectionDuration
     property color fillColor: theme.colors.frame
@@ -34,5 +35,6 @@ Item {
         visible: root.inset
         theme: root.theme
         fillColor: root.fillColor
+        leftEdge: root.leftEdge
     }
 }

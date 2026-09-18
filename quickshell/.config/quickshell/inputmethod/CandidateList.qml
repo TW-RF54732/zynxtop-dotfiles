@@ -19,8 +19,8 @@ Item {
     readonly property real measuredWidth: {
         let widest = 0
         for (const candidate of candidates)
-            widest = Math.max(widest, labelMetrics.advanceWidth(candidate.label || "")
-                + valueMetrics.advanceWidth(candidate.text || "") + theme.inputMethod.padding * 2 + 12)
+            widest = Math.max(widest, labelMetrics.advanceWidth(candidate.label || "") + 12
+                + valueMetrics.advanceWidth(candidate.text || "") + theme.inputMethod.padding * 2)
         return Math.ceil(widest)
     }
     property string pageKey: ""

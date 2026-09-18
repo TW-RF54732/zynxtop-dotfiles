@@ -12,6 +12,7 @@ Item {
     property int emptyHeight: 0
     property bool insetSelection: false
     property real selectionInset: 0
+    property real selectionLeftEdge: theme.geometry.frameWidth
     property bool hoverSelection: false
     property bool keyboardNavigation: true
     property var isSelectable: index => true
@@ -74,6 +75,7 @@ Item {
             id: highlight
             theme: root.theme
             inset: root.insetSelection
+            leftEdge: root.selectionLeftEdge
             targetX: -root.selectionInset
             // Scroll is already animated: animate only the selection offset below.
             targetY: root.currentIndex * root.rowHeight
