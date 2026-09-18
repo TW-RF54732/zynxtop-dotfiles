@@ -22,16 +22,15 @@ GlassFrame {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 24
-        spacing: 28
+        anchors.margins: 20
+        spacing: 24
         ColumnLayout {
             Layout.preferredWidth: 660
             Layout.minimumWidth: 600
             Layout.maximumWidth: 660
-            Layout.fillHeight: true
-            spacing: 14
+            Layout.alignment: Qt.AlignTop
+            spacing: 12
             MonoText { theme: root.theme; text: "SYSTEM"; tone: root.theme.colors.textSecondary; font.pixelSize: 12 }
-            Item { Layout.fillHeight: true }
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 24
@@ -46,7 +45,7 @@ GlassFrame {
                     stats: root.systemStats.stats
                     Layout.preferredWidth: 300
                     Layout.minimumWidth: 240
-                    Layout.preferredHeight: 190
+                    Layout.preferredHeight: 175
                 }
             }
             RowLayout {
@@ -70,12 +69,27 @@ GlassFrame {
                 }
                 MonoText { theme: root.theme; font.pixelSize: 12; tone: root.theme.colors.textSecondary; text: root.diskCapacity() }
             }
-            Item { Layout.fillHeight: true }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+                MonoText { theme: root.theme; Layout.preferredWidth: 52; text: "NET"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
+                MonoText { theme: root.theme; Layout.fillWidth: true; font.pixelSize: 12; tone: root.theme.colors.textSecondary; elide: Text.ElideRight; text: !root.network.available ? "狀態不可用" : root.network.offline ? "離線" : root.network.connectedDevice ? "已連線 · " + root.network.interfaceName : "未連線" }
+            }
         }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        MediaPanel { theme: root.theme; Layout.fillWidth: true; Layout.preferredWidth: 400; Layout.minimumWidth: 160 }
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.preferredWidth: 400
+            Layout.minimumWidth: 160
+            Layout.maximumWidth: 420
+            Layout.alignment: Qt.AlignTop
+            spacing: 10
+            MediaPanel { theme: root.theme; Layout.fillWidth: true }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
+            ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
+        }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        ControlsPanel { theme: root.theme; audio: root.audio; network: root.network; Layout.preferredWidth: 260; Layout.maximumWidth: 300; Layout.fillWidth: true }
+        Item { Layout.fillWidth: true; Layout.fillHeight: true }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
         TrayPanel { theme: root.theme; Layout.preferredWidth: 120; Layout.maximumWidth: 120; Layout.fillHeight: true }
     }
