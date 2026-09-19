@@ -38,6 +38,7 @@ ShellRoot {
     NetworkService { id: networkService }
     ClockService { id: clockService }
     InputMethodService { id: ime; enabled: false }
+    WireGuardService { id: wireguard; monitoring: false }
     AnimatedVisibility { id: popupVisibility; duration: testTheme.motion.fastDuration }
     PopupPlacement {
         id: placement
@@ -146,6 +147,27 @@ ShellRoot {
             testRoot.check(example.width === 300 && example.height === 60, "composition example loads")
             testRoot.check(clockService.displayDate instanceof Date, "shared clock exposes date")
             testRoot.check(typeof networkService.offline === "boolean", "shared network exposes status")
+            wireguard.applyState("active\n")
+            testRoot.check(wireguard.connected && wireguard.displayStatus === "CONNECTED"
+                && wireguard.actionLabel === "DISCONNECT", "wireguard maps active service state")
+            wireguard.applyState("inactive")
+            testRoot.check(!wireguard.connected && wireguard.displayStatus === "DISCONNECTED"
+                && wireguard.actionLabel === "CONNECT", "wireguard maps inactive service state")
+            wireguard.applyState("activating")
+            testRoot.check(wireguard.busy && wireguard.displayStatus === "CONNECTING",
+                "wireguard disables actions while systemd transitions")
+            wireguard.applyState("unexpected")
+            testRoot.check(!wireguard.canToggle && wireguard.actionLabel === "RETRY",
+                "wireguard unknown state offers status retry")
+            testRoot.check(wireguard.validProfile("wg-office") && !wireguard.validProfile("bad/name")
+                && wireguard.unitName("wg-office") === "wg-quick@wg-office.service",
+                "wireguard validates profile names and maps systemd units")
+            wireguard.addConfiguration("bad/name", "[Interface]\nPrivateKey = test")
+            testRoot.check(wireguard.addError.indexOf("Name must") >= 0 && !wireguard.adding,
+                "wireguard rejects unsafe configuration names")
+            wireguard.addConfiguration("test-profile", "[Peer]\nPublicKey = test")
+            testRoot.check(wireguard.addError.indexOf("[Interface]") >= 0 && !wireguard.adding,
+                "wireguard rejects pasted configs without an interface section")
             testRoot.check(apps.search("", false).length === 0, "empty search is collapsed")
             testRoot.check(apps.search("> command", true).length === 0, "commands bypass application search")
             testRoot.check(apps.score(testRoot.entries[0], "beta") === 1000, "exact match rank")

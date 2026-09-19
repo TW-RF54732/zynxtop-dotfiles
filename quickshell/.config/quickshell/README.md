@@ -162,6 +162,26 @@ Categories=Utility;
 
 安裝後重新開啟 Launcher 搜尋名稱，或按 `Tab` 查看全部。如果沒有出現，檢查 `.desktop` 路徑、`Name`、`Exec` 與 `NoDisplay`，並確認目前 Quickshell 行程能讀取安裝目錄；必要時重新啟動該 Quickshell 設定。
 
+## WireGuard 控制器
+
+Launcher 中的 `WireGuard` 項目會透過 IPC 開啟內建控制視窗。設定選單預設包含 `wg`，也會保存經由 GUI 新增的設定；每個設定可獨立顯示狀態及連線／斷線，因此可以同時啟用多個介面。
+
+視窗採用 WireGuard 官方桌面程式相近的雙欄結構：左側列出 tunnels，右側顯示選中項目的狀態、服務錯誤與 Activate／Deactivate 操作。`ADD TUNNEL` 提供名稱欄及多行設定框，可直接貼上完整的 `wg-quick` `.conf`；名稱同時作為 Linux 介面與 `/etc/wireguard/<name>.conf` 檔名，長度限制為 15 個合法介面字元。
+
+新設定以 `0600` 暫存並經 PolicyKit 安裝至 `/etc/wireguard/`，PrivateKey 不會放入指令列或日誌。`PreUp`、`PostUp`、`PreDown`、`PostDown` 等 hook 會由 `wg-quick` 以 root 執行，因此只應貼上可信任的設定。服務啟動失敗時，右側會顯示 `systemctl status` 的實際錯誤，而不只顯示泛用失敗訊息。
+
+安裝設定及切換服務時使用 PolicyKit 系統驗證，不安裝免密碼規則，也不改變服務的開機啟用狀態。GUI 設定清單保存在 `Quickshell.stateDir/wireguard-profiles.json`。
+
+含有 `DNS=` 的 `wg-quick` 設定需要 `resolvconf`。此主機使用 `openresolv`，並透過 `/etc/NetworkManager/conf.d/10-openresolv.conf` 設定 `rc-manager=resolvconf`，讓 NetworkManager 與 WireGuard 共用同一套 DNS 管理，避免啟停 tunnel 時出現 `resolvconf: signature mismatch`。
+
+IPC 介面：
+
+```sh
+qs ipc call -- wireguard show
+qs ipc call -- wireguard hide
+qs ipc call -- wireguard toggle
+```
+
 ## 設計系統與檔案結構
 
 主題與服務由入口建立一次，透過 QML 屬性注入功能模組。新增面板的介面與完整範例見 [`docs/MODULARITY.md`](docs/MODULARITY.md)。

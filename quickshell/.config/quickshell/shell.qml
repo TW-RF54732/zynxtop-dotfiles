@@ -10,6 +10,7 @@ ShellRoot {
     ApplicationsService { id: applicationsService }
     InputMethodService { id: inputMethodService }
     NotificationService { id: notificationService; defaultTimeout: sharedTheme.notifications.defaultTimeout }
+    WireGuardService { id: wireGuardService }
 
     InputMethodWindow {
         theme: sharedTheme
@@ -18,6 +19,7 @@ ShellRoot {
     }
 
     Launcher { theme: sharedTheme; applications: applicationsService }
+    WireGuardWindow { theme: sharedTheme; wireguard: wireGuardService }
     TopBar {
         theme: sharedTheme
         compositor: compositorService

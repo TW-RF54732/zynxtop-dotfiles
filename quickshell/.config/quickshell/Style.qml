@@ -60,6 +60,13 @@ QtObject {
         readonly property int resultTextSpacing: 2
     }
 
+    readonly property var wireguard: QtObject {
+        readonly property int width: 760
+        readonly property int height: 500
+        readonly property int sidebarWidth: 210
+        readonly property int padding: 24
+    }
+
     readonly property var inputMethod: QtObject {
         readonly property string fontFamily: "Noto Sans CJK TC"
         readonly property int fontSize: 20
