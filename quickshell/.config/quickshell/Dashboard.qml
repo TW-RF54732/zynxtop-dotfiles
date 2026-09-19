@@ -40,13 +40,15 @@ GlassFrame {
                     stats: root.systemStats.stats
                     Layout.fillWidth: true
                     Layout.preferredWidth: 350
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 18
                 }
                 UsageGauge {
                     theme: root.theme
                     stats: root.systemStats.stats
                     Layout.preferredWidth: 300
                     Layout.minimumWidth: 240
-                    Layout.preferredHeight: 190
+                    Layout.preferredHeight: 178
                 }
             }
             RowLayout {
