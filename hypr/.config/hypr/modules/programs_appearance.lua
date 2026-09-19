@@ -49,3 +49,13 @@ hl.layer_rule({
     xray = true,
     ignore_alpha = 0.01,
 })
+
+hl.layer_rule({
+    name = "quickshell-clipboard-glass",
+    match = {
+        namespace = "^quickshell-clipboard$",
+    },
+    blur = true,
+    xray = true,
+    ignore_alpha = 0.01,
+})

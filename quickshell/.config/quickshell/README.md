@@ -27,6 +27,7 @@ Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配�
 | 在靜音圖示上滾動 | 調整輸出音量 |
 | 點擊 Dashboard 圖示 | 展開／收合 Dashboard |
 | `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
+| `Super + V` | 在文字游標旁開啟剪貼簿歷史 |
 
 Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，重啟和關機需在面板內確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料與控制預計由之後的右側選單承載，目前尚未建立。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
 
@@ -42,6 +43,20 @@ qs ipc call topbar closeDashboard
 通知中心已從 Dashboard 移出，模組保留，目前沒有選單入口。以下為模組既有功能：列表只顯示未讀，同一來源自動合成一疊，顯示最新訊息與未讀數量；左鍵點擊堆疊可展開個別通知，左鍵點擊通知查看完整內文；重複左鍵保持展開。長內文限制顯示高度，可在內容區捲動。右鍵關閉單則通知並標為已讀、從列表移除；切換到另一則也會將上一則已展開的通知標為已讀。展開後上方的「向下圖示＋橫線」可用左鍵或右鍵收合整疊，其餘未讀通知保留。標題使用英文，不顯示來源與未讀總數，也沒有勾、叉按鈕。「清除」移除全部歷史，不會關閉正在顯示的通知。圖示依序使用通知提供的圖示、來源應用程式的桌面圖示，最後以向量鈴鐺備援。
 
 歷史開始從通知服務接收的訊息累積，包括已逾時或關閉的通知；同一則通知的更新會替換原紀錄，transient 通知不存入歷史。文字快照及已讀狀態保存在 `Quickshell.stateDir/notification-history.json`，重新啟動後仍可查看，最多保留最新 500 則。通知已關閉後不保留可執行動作。通知中心目前未掛載，模組保留在 `dashboard/NotificationCenter.qml`，資料與儲存仍由 `services/NotificationService.qml` 管理。
+
+## 剪貼簿
+
+按下 `Super + V` 會讀取 `cliphist` 的最近 50 筆歷史，並在目前文字游標旁顯示清單；無法取得文字游標位置時，會改在目前螢幕下方中央顯示。使用 `↑`／`↓` 選擇、`Enter` 貼上、`Esc` 關閉，也可直接以滑鼠點擊項目。圖片等二進位項目會顯示類型與尺寸摘要。
+
+需要 `cliphist`、`wl-copy`，並由桌面工作階段常駐執行 `wl-paste --watch cliphist store`。IPC 介面：
+
+```sh
+qs ipc call clipboard toggle
+qs ipc call -- clipboard show
+qs ipc call clipboard hide
+```
+
+文字游標定位共用中文候選框的唯讀 Hyprland caret adapter；選中項目後透過 Hyprland `sendshortcut` 將 `Ctrl+V` 送回原本的作用中視窗。
 
 ## 視覺設計
 

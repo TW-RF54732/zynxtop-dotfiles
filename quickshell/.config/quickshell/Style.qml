@@ -60,6 +60,16 @@ QtObject {
         readonly property int resultTextSpacing: 2
     }
 
+    readonly property var clipboard: QtObject {
+        readonly property int width: 520
+        readonly property int headerHeight: 44
+        readonly property int rowHeight: 48
+        readonly property int maxVisibleRows: 8
+        readonly property int emptyHeight: 72
+        readonly property int screenMargin: 8
+        readonly property int cursorGap: 6
+    }
+
     readonly property var wireguard: QtObject {
         readonly property int width: 760
         readonly property int height: 500

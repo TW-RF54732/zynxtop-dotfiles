@@ -8,6 +8,7 @@ ShellRoot {
     NetworkService { id: networkService }
     ClockService { id: clockService }
     ApplicationsService { id: applicationsService }
+    ClipboardService { id: clipboardService }
     InputMethodService { id: inputMethodService }
     NotificationService { id: notificationService; defaultTimeout: sharedTheme.notifications.defaultTimeout }
     WireGuardService { id: wireGuardService }
@@ -19,6 +20,11 @@ ShellRoot {
     }
 
     Launcher { theme: sharedTheme; applications: applicationsService }
+    Clipboard {
+        theme: sharedTheme
+        clipboard: clipboardService
+        compositor: compositorService
+    }
     WireGuardWindow { theme: sharedTheme; wireguard: wireGuardService }
     TopBar {
         theme: sharedTheme
