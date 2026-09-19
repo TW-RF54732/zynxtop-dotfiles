@@ -38,6 +38,7 @@ GlassFrame {
                 ResourceDetails {
                     theme: root.theme
                     stats: root.systemStats.stats
+                    network: root.network
                     Layout.fillWidth: true
                     Layout.preferredWidth: 350
                     Layout.alignment: Qt.AlignTop
@@ -71,12 +72,6 @@ GlassFrame {
                     text: root.systemStats.stats.diskTotal ? Math.round(root.systemStats.stats.diskUsed / root.systemStats.stats.diskTotal * 100) + "%" : "—"
                 }
                 MonoText { theme: root.theme; font.pixelSize: 12; tone: root.theme.colors.textSecondary; text: root.diskCapacity() }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 12
-                MonoText { theme: root.theme; Layout.preferredWidth: 52; text: "NET"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
-                MonoText { theme: root.theme; Layout.fillWidth: true; font.pixelSize: 12; tone: root.theme.colors.textSecondary; elide: Text.ElideRight; text: !root.network.available ? "UNAVAILABLE" : root.network.offline ? "OFFLINE" : root.network.connectedDevice ? "CONNECTED · " + root.network.interfaceName : "DISCONNECTED" }
             }
         }
         Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }

@@ -35,6 +35,37 @@ def cpu_sample():
     return sum(values), values[3] + values[4]
 
 
+def network_interface():
+    """Return the interface carrying the default route, or another active interface."""
+    try:
+        with open('/proc/net/route') as stream:
+            for line in stream.readlines()[1:]:
+                fields = line.split()
+                if len(fields) > 3 and fields[1] == '00000000' and int(fields[3], 16) & 2:
+                    return fields[0]
+    except (OSError, ValueError):
+        pass
+    for path in sorted(glob.glob('/sys/class/net/*/operstate')):
+        try:
+            with open(path) as stream:
+                if stream.read().strip() == 'up':
+                    interface = path.split('/')[-2]
+                    if interface != 'lo':
+                        return interface
+        except OSError:
+            pass
+    return None
+
+
+def network_sample():
+    interface = network_interface()
+    if not interface:
+        return None, None, None
+    received = read_number('/sys/class/net/' + interface + '/statistics/rx_bytes')
+    transmitted = read_number('/sys/class/net/' + interface + '/statistics/tx_bytes')
+    return interface, received, transmitted
+
+
 def gpu_sample():
     for card in sorted(glob.glob('/sys/class/drm/card[0-9]*/device')):
         try:
@@ -62,7 +93,7 @@ def gpu_sample():
         return dict(gpu=None, gpuTemperature=None, gpuMemoryUsed=None, gpuMemoryTotal=None)
 
 
-def sample(previous):
+def sample(previous, previous_network, seconds):
     current = cpu_sample()
     elapsed = current[0] - previous[0]
     cpu = 100 * (1 - (current[1] - previous[1]) / elapsed) if elapsed > 0 else None
@@ -71,19 +102,31 @@ def sample(previous):
     disk = os.statvfs('/')
     total = disk.f_blocks * disk.f_frsize
     used = total - disk.f_bfree * disk.f_frsize
-    return current, dict(cpu=cpu, ram=100 * (1 - memory['MemAvailable'] / memory['MemTotal']),
+    interface, received, transmitted = network_sample()
+    previous_interface, previous_received, previous_transmitted = previous_network
+    rx_rate = (received - previous_received) / seconds if (interface == previous_interface
+        and received is not None and previous_received is not None and seconds > 0) else None
+    tx_rate = (transmitted - previous_transmitted) / seconds if (interface == previous_interface
+        and transmitted is not None and previous_transmitted is not None and seconds > 0) else None
+    return current, (interface, received, transmitted), dict(cpu=cpu, ram=100 * (1 - memory['MemAvailable'] / memory['MemTotal']),
                         ramUsed=memory['MemTotal'] - memory['MemAvailable'],
                         ramTotal=memory['MemTotal'], swapUsed=memory.get('SwapTotal', 0) - memory.get('SwapFree', 0),
                         swapTotal=memory.get('SwapTotal', 0), diskUsed=used, diskTotal=total,
+                        networkInterface=interface, networkRxRate=max(0, rx_rate) if rx_rate is not None else None,
+                        networkTxRate=max(0, tx_rate) if tx_rate is not None else None,
                         **cpu_details(), **gpu_sample())
 
 
 if __name__ == '__main__':
     previous = cpu_sample()
+    previous_network = network_sample()
+    previous_time = time.monotonic()
     while True:
         time.sleep(1)
         try:
-            previous, data = sample(previous)
+            current_time = time.monotonic()
+            previous, previous_network, data = sample(previous, previous_network, current_time - previous_time)
+            previous_time = current_time
             print(json.dumps(data), flush=True)
         except (OSError, ValueError, KeyError):
             print('{}', flush=True)
