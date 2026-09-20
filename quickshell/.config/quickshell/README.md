@@ -38,6 +38,27 @@ qs ipc call topbar toggleDashboard
 qs ipc call topbar closeDashboard
 ```
 
+## OSD
+
+OSD 位於 Top Bar 左側的同一個透明視窗區域。調整音量時以極簡的圖示、進度條與百分比短暫顯示；停止調整後自動消失。斷網與靜音屬於常駐狀態，靜音只顯示正方形圖示；狀態恢復後自動移除。Top Bar 本身不再重複顯示靜音或斷網圖示。
+
+其他腳本可透過 IPC 加入或移除常駐狀態：
+
+```sh
+qs ipc call osd set vpn star "VPN 已連線"
+qs ipc call osd remove vpn
+qs ipc call osd clear
+```
+
+也可顯示一次性提醒；`showFor` 的時間單位為毫秒：
+
+```sh
+qs ipc call -- osd show star "設定已套用"
+qs ipc call osd showFor star "設定已套用" 3000
+```
+
+`set` 的參數依序為唯一 ID、圖示名稱與文字。文字留空時只顯示正方形圖示。內建圖示名稱包含 `star`、`muted`、`offline` 與 `volume`。
+
 ## 通知中心
 
 通知中心已從 Dashboard 移出，模組保留，目前沒有選單入口。以下為模組既有功能：列表只顯示未讀，同一來源自動合成一疊，顯示最新訊息與未讀數量；左鍵點擊堆疊可展開個別通知，左鍵點擊通知查看完整內文；重複左鍵保持展開。長內文限制顯示高度，可在內容區捲動。右鍵關閉單則通知並標為已讀、從列表移除；切換到另一則也會將上一則已展開的通知標為已讀。展開後上方的「向下圖示＋橫線」可用左鍵或右鍵收合整疊，其餘未讀通知保留。標題使用英文，不顯示來源與未讀總數，也沒有勾、叉按鈕。「清除」移除全部歷史，不會關閉正在顯示的通知。圖示依序使用通知提供的圖示、來源應用程式的桌面圖示，最後以向量鈴鐺備援。
@@ -74,7 +95,20 @@ qs ipc call clipboard hide
 
 需要 Quickshell、Python 3（Dashboard 系統數據）、Wayland 環境與可用的字體、圖示主題。GPU 使用率優先讀取 DRM 的 `gpu_busy_percent`，NVIDIA 使用 `nvidia-smi`（需有正常運作的驅動）。目前使用 Hyprland 提供模糊及快捷鍵；沒有 npm、Python 或外部搜尋套件依賴。
 
-將設定放在 `~/.config/quickshell/` 後執行：
+此設定以 GNU Stow 從 dotfiles 儲存庫部署。進入儲存庫根目錄後執行：
+
+```sh
+cd ~/dotfiles
+stow --no-folding --target="$HOME" quickshell
+```
+
+`--no-folding` 會逐項建立連結，讓 `~/.config/quickshell/` 保持為一般目錄；Quickshell 產生的 `.qmlls.ini` 等 runtime 檔案便不會寫入儲存庫。新增設定檔後也要重新執行同一條 `stow` 指令，才能為新檔案建立連結。若要重新套用整個 package，可執行：
+
+```sh
+stow --restow --no-folding --target="$HOME" quickshell
+```
+
+完成後執行：
 
 ```sh
 qs

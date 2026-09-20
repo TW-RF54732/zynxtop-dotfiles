@@ -63,6 +63,20 @@ Item {
                 context.moveTo(width * 0.16, height * 0.16)
                 context.lineTo(width * 0.84, height * 0.84)
                 context.stroke()
+            } else if (root.name === "volume") {
+                context.beginPath()
+                context.moveTo(width * 0.12, height * 0.40)
+                context.lineTo(width * 0.34, height * 0.40)
+                context.lineTo(width * 0.58, height * 0.20)
+                context.lineTo(width * 0.58, height * 0.80)
+                context.lineTo(width * 0.34, height * 0.60)
+                context.lineTo(width * 0.12, height * 0.60)
+                context.closePath()
+                context.stroke()
+                context.beginPath()
+                context.arc(width * 0.57, height * 0.50, width * 0.22,
+                    -Math.PI * 0.38, Math.PI * 0.38)
+                context.stroke()
             } else if (root.name === "muted") {
                 context.beginPath()
                 context.moveTo(width * 0.12, height * 0.40)

@@ -6,6 +6,14 @@ ShellRoot {
     CompositorService { id: compositorService }
     AudioService { id: audioService }
     NetworkService { id: networkService }
+    // Owns persistent states, transient feedback, and the public OSD IPC.
+    OsdService {
+        id: osdService
+        audio: audioService
+        network: networkService
+        defaultTransientTimeout: sharedTheme.osd.messageTimeout
+        volumeTimeout: sharedTheme.osd.transientTimeout
+    }
     ClockService { id: clockService }
     ApplicationsService { id: applicationsService }
     ClipboardService { id: clipboardService }
@@ -31,6 +39,7 @@ ShellRoot {
         compositor: compositorService
         audio: audioService
         network: networkService
+        osd: osdService
         clock: clockService
         notifications: notificationService
     }

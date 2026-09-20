@@ -113,6 +113,20 @@ QtObject {
         readonly property int historyDetailMaxHeight: 160
     }
 
+    readonly property var osd: QtObject {
+        readonly property int width: root.notifications.cardWidth
+        readonly property int statusCardHeight: 48
+        readonly property int statusWidth: 160
+        readonly property int progressCardHeight: root.topBar.height
+        readonly property int iconSize: 22
+        readonly property int progressHeight: 5
+        readonly property int padding: root.notifications.padding
+        readonly property int gap: 8
+        readonly property int transientTimeout: 1400
+        readonly property int messageTimeout: 1800
+        readonly property int animationDuration: 180
+    }
+
     readonly property var topBar: QtObject {
         readonly property int height: 48
         readonly property int maxWidth: 2200

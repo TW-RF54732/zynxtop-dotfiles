@@ -18,6 +18,7 @@ Scope {
     required property CompositorService compositor
     required property AudioService audio
     required property NetworkService network
+    required property OsdService osd
     required property ClockService clock
     required property NotificationService notifications
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
@@ -256,13 +257,6 @@ Scope {
                         color: root.theme.colors.separator
                     }
 
-                    StatusIndicators {
-                        theme: root.theme
-                        audio: root.audio
-                        network: root.network
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
                     DashboardTrigger {
                         theme: root.theme
                         active: root.dashboardOpen
@@ -285,6 +279,15 @@ Scope {
                     barWindow.screen.height - y - height - root.theme.topBar.sideMargin))
                 onActivated: notification => root.notifications.activate(notification)
                 onDismissed: notification => notification.dismiss()
+            }
+
+            // Shares this window and coordinate space with notifications; grows leftward.
+            OsdStrip {
+                theme: root.theme
+                osd: root.osd
+                barHeight: surface.height
+                x: surface.x - root.theme.notifications.gap - width
+                y: surface.y
             }
         }
     }
