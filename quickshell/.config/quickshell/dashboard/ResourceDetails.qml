@@ -36,7 +36,10 @@ GridLayout {
             return "UNAVAILABLE"
         if (network.offline)
             return "OFFLINE"
-        const interfaceName = network.interfaceName || stats.networkInterface
+        // Stats and rates must refer to the same kernel-selected route. The
+        // networking backend commonly reports the underlying Wi-Fi device even
+        // while policy routing sends traffic through a WireGuard interface.
+        const interfaceName = stats.networkInterface || network.interfaceName
         if (!interfaceName)
             return "DISCONNECTED"
         return interfaceName + " · ↓ " + rate(stats.networkRxRate) + " · ↑ " + rate(stats.networkTxRate)

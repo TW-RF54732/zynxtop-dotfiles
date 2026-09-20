@@ -36,13 +36,30 @@ def cpu_sample():
 
 
 def network_interface():
-    """Return the interface carrying the default route, or another active interface."""
+    """Return the interface selected by the kernel for normal internet traffic."""
     try:
+        result = subprocess.run(
+            ['ip', '-j', 'route', 'get', '1.1.1.1'], capture_output=True,
+            text=True, timeout=1, check=True)
+        routes = json.loads(result.stdout)
+        if routes and routes[0].get('dev') != 'lo':
+            return routes[0].get('dev')
+    except (OSError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
+        pass
+
+    # /proc/net/route does not account for policy routing (used by wg-quick),
+    # but is a useful fallback when iproute2 is unavailable. Pick the lowest
+    # metric instead of whichever default route happens to be listed first.
+    try:
+        defaults = []
         with open('/proc/net/route') as stream:
             for line in stream.readlines()[1:]:
                 fields = line.split()
-                if len(fields) > 3 and fields[1] == '00000000' and int(fields[3], 16) & 2:
-                    return fields[0]
+                if (len(fields) > 6 and fields[1] == '00000000'
+                        and int(fields[3], 16) & 2):
+                    defaults.append((int(fields[6]), fields[0]))
+        if defaults:
+            return min(defaults)[1]
     except (OSError, ValueError):
         pass
     for path in sorted(glob.glob('/sys/class/net/*/operstate')):
