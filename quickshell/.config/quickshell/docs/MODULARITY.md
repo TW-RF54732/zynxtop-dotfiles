@@ -110,3 +110,10 @@ Wayland 實機仍需確認焦點、點擊外部關閉、動畫、長清單捲動
 - `sidebar/` 組裝個人卡、月曆及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
 - `UserService` 暴露 `displayName`、`avatar`，以一次性 Python 程序讀取目前帳號及本地頭像；`CompositorService.focusedMonitor` 暴露目前焦點螢幕。
 - `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。
+
+
+## 通知區塊與動畫
+
+通知中心以來源為 ListView 的穩定項目；`notifications/NotificationGroup.qml` 保持標題高度固定，透過單一裁切區域顯示下方清單。每個區塊獨立管理可反向播放的高度動畫；通知內文由 `NotificationHistoryRow.qml` 管理，群組已展開時直接跟隨內文高度，避免第二層動畫拖尾。捲動位置跟隨縮小中的內容底緣，不逐幀重啟另一個捲動動畫。
+
+區塊發出 `toggleRequested`、`deleteRequested`、`recordOpened(record)` 與 `recordClosed(record)`，由通知中心呼叫原有服務。`deleteGroup(sourceKey)` 只刪除目前該來源區塊內的未讀紀錄；「清除」維持刪除全部歷史。通知服務、持久化格式與 Top Bar 通知流程不變。

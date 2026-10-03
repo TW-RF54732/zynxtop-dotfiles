@@ -119,6 +119,7 @@ QtObject {
         readonly property int detailMaxLines: 4
         readonly property int detailMaxHeight: 100
         readonly property int historyDetailMaxHeight: 160
+        readonly property int historyExpandDuration: 280
     }
 
     readonly property var osd: QtObject {

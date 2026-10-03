@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQml.Models
-import Quickshell
 import "../components"
 import "../services"
 import "../notifications"
@@ -14,85 +13,37 @@ ColumnLayout {
     required property NotificationService notifications
     property string expandedKey: ""
     property string expandedSource: ""
-    property real groupExpansionProgress: 0
-    property string animatedSource: ""
-    property string closingSource: ""
-    property real groupClosingProgress: 0
-    onExpandedSourceChanged: {
-        const resumeProgress = expandedSource && expandedSource === closingSource ? groupClosingProgress : 0
-        groupClosing.stop()
-        closingSource = animatedSource
-        groupClosingProgress = groupExpansionProgress
-        groupOpening.stop()
-        animatedSource = expandedSource
-        groupExpansionProgress = resumeProgress
-        if (closingSource) groupClosing.start()
-        if (expandedSource) groupOpening.start()
-    }
-    NumberAnimation {
-        id: groupClosing
-        target: root
-        property: "groupClosingProgress"
-        to: 0
-        duration: root.theme.notifications.expandDuration
-        easing.type: Easing.InOutCubic
-        onFinished: root.closingSource = ""
-    }
-    NumberAnimation {
-        id: groupOpening
-        target: root
-        property: "groupExpansionProgress"
-        to: 1
-        duration: root.theme.notifications.expandDuration
-        easing.type: Easing.InOutCubic
-    }
     readonly property var records: notifications.history.filter(record => !record.read)
     readonly property var groups: {
         const bySource = Object.create(null)
         const result = []
         for (const record of records) {
             const key = sourceKey(record)
-            let group = bySource[key]
-            if (!group) {
-                group = {key: key, records: []}
-                bySource[key] = group
-                result.push(group)
+            if (!bySource[key]) {
+                bySource[key] = {key: key, records: []}
+                result.push(bySource[key])
             }
-            group.records.push(record)
+            bySource[key].records.push(record)
         }
         return result
     }
-    readonly property var rows: layoutRows(false)
-    readonly property var modelRows: layoutRows(true)
-    function layoutRows(includeCollapsed) {
+    // Logical rows for actions; visual layout uses one stable item per source.
+    readonly property var rows: {
         const result = []
-        groups.forEach((group, groupIndex) => {
-            const latest = group.records[0]
-            const common = {groupKey: group.key, groupIndex: groupIndex}
-            if (group.records.length === 1) {
-                result.push(Object.assign({}, latest, common,
-                    {isGroupHeader: false, inGroup: false, groupCount: 1}))
-            } else {
-                result.push(Object.assign({}, latest, common,
-                    {key: "group:" + group.key, isGroupHeader: true, inGroup: false,
-                        groupCount: group.records.length}))
-                if (includeCollapsed || expandedSource === group.key) {
-                    const groupHeight = group.records.reduce((height, record) => height + 68 + (record.body ? 18 : 0), 0)
-                    let offset = 0
-                    group.records.forEach(record => {
-                        result.push(Object.assign({}, record, common,
-                            {isGroupHeader: false, inGroup: true, groupCount: 1,
-                                groupOffset: offset, groupHeight: groupHeight}))
-                        offset += 68 + (record.body ? 18 : 0)
-                    })
-                }
-            }
-        })
+        for (const group of groups) {
+            const grouped = group.records.length > 1
+            result.push(Object.assign({}, group.records[0], {
+                key: grouped ? "group:" + group.key : group.records[0].key,
+                groupKey: group.key, isGroupHeader: grouped
+            }))
+            if (grouped && expandedSource === group.key)
+                group.records.forEach(record => result.push(Object.assign({}, record, {groupKey: group.key, isGroupHeader: false})))
+        }
         return result
     }
     onRecordsChanged: {
         if (!records.some(record => record.key === expandedKey)) expandedKey = ""
-        if (!records.some(record => sourceKey(record) === expandedSource)) expandedSource = ""
+        if (records.filter(record => sourceKey(record) === expandedSource).length < 2) expandedSource = ""
     }
     spacing: 8
 
@@ -119,26 +70,27 @@ ColumnLayout {
         const previous = expandedKey
         expandedKey = ""
         if (previous) notifications.markRead(previous)
-        const opening = expandedSource !== key
-        if (opening) historyList.holdExpansionPosition()
-        expandedSource = opening ? key : ""
+        expandedSource = expandedSource === key ? "" : key
     }
-    function openRow(entry) {
-        if (entry.isGroupHeader) {
-            if (expandedSource !== entry.groupKey) toggleGroup(entry.groupKey)
-        } else if (expandedKey !== entry.key) toggleRecord(entry)
-    }
-    function closeRow(entry) {
-        if (entry.isGroupHeader) {
-            if (expandedSource === entry.groupKey) toggleGroup(entry.groupKey)
-        } else markRowRead(entry)
-    }
+    function openRecord(record) { if (expandedKey !== record.key) toggleRecord(record) }
     function keysForRow(entry) {
         const group = groups.find(group => group.key === entry.groupKey)
         return entry.isGroupHeader && group ? group.records.map(record => record.key) : [entry.key]
     }
-    function markRowRead(entry) { notifications.markRecordsRead(keysForRow(entry)) }
-    function deleteRow(entry) { notifications.deleteHistories(keysForRow(entry)) }
+    function markRowRead(entry) {
+        historyList.reserveScrollSpace()
+        notifications.markRecordsRead(keysForRow(entry))
+    }
+    function deleteRow(entry) {
+        historyList.reserveScrollSpace()
+        notifications.deleteHistories(keysForRow(entry))
+    }
+    function deleteGroup(key) {
+        const group = groups.find(group => group.key === key)
+        if (!group) return
+        historyList.reserveScrollSpace()
+        notifications.deleteHistories(group.records.map(record => record.key))
+    }
 
     RowLayout {
         Layout.fillWidth: true
@@ -150,27 +102,29 @@ ColumnLayout {
             text: "清除"
             implicitWidth: 48; implicitHeight: 28
             interactive: root.notifications.history.length > 0
-            onClicked: { root.expandedKey = ""; root.notifications.clearHistory() }
+            onClicked: {
+                historyList.reserveScrollSpace()
+                root.expandedKey = ""
+                root.notifications.clearHistory()
+            }
         }
     }
 
     ListModel {
-        id: historyModel
+        id: groupModel
         dynamicRoles: true
-        property var items: root.modelRows
+        property var items: root.groups
         onItemsChanged: synchronize()
         Component.onCompleted: synchronize()
         function synchronize() {
             historyList.reserveScrollSpace()
             const wanted = items.map(item => item.key)
-            for (let i = count - 1; i >= 0; --i) {
+            for (let i = count - 1; i >= 0; --i)
                 if (!wanted.includes(get(i).entry.key)) remove(i)
-            }
             for (let i = 0; i < items.length; ++i) {
                 let existing = -1
-                for (let j = i; j < count; ++j) {
+                for (let j = i; j < count; ++j)
                     if (get(j).entry.key === items[i].key) { existing = j; break }
-                }
                 if (existing < 0) insert(i, {entry: items[i]})
                 else {
                     if (existing !== i) move(existing, i, 1)
@@ -183,65 +137,26 @@ ColumnLayout {
     ListView {
         id: historyList
         objectName: "notificationHistoryList"
-        // Keep the current viewport legal while rows shrink, then release the
-        // temporary space once the animated scroll has reached the new bottom.
+        // Prevent ListView's automatic bottom clamp while a block shrinks.
+        // Follow the animated content edge once per frame instead of restarting
+        // a second scroll animation on every height update.
         function reserveScrollSpace() {
-            scrollRecovery.stop()
             bottomMargin = Math.max(bottomMargin, contentY - originY + height)
         }
-        property bool expansionHeld: false
-        property real expansionY: 0
-        function holdExpansionPosition() {
-            cancelFlick()
-            expansionY = contentY
-            expansionHeld = true
-            expansionHold.restart()
-        }
-        Timer {
-            id: expansionHold
-            interval: root.theme.notifications.expandDuration + 32
-            onTriggered: {
-                historyList.expansionHeld = false
-                historyList.recoverScrollPosition()
-            }
-        }
-        onContentYChanged: {
-            if (expansionHeld && !moving && !dragging && Math.abs(contentY - expansionY) > 0.01) contentY = expansionY
-        }
         function recoverScrollPosition() {
-            if (moving || dragging || expansionHeld) return
+            if (moving || dragging) return
             const bottom = Math.max(originY, originY + contentHeight - height)
-            const destination = Math.max(originY, Math.min(contentY, bottom))
-            if (Math.abs(contentY - destination) > 0.5) {
-                scrollRecovery.stop()
-                scrollRecovery.to = destination
-                scrollRecovery.start()
-            } else if (!scrollRecovery.running) {
-                bottomMargin = 0
-            }
+            contentY = Math.max(originY, Math.min(contentY, bottom))
+            bottomMargin = 0
         }
         onContentHeightChanged: Qt.callLater(recoverScrollPosition)
         onOriginYChanged: Qt.callLater(recoverScrollPosition)
-        onMovementStarted: {
-            expansionHeld = false
-            expansionHold.stop()
-            scrollRecovery.stop()
-        }
         onMovementEnded: recoverScrollPosition()
-        NumberAnimation {
-            id: scrollRecovery
-            target: historyList
-            property: "contentY"
-            duration: root.theme.notifications.expandDuration
-            easing.type: Easing.OutCubic
-            onFinished: historyList.bottomMargin = 0
-        }
         Layout.fillWidth: true
         Layout.fillHeight: true
-        model: historyModel
-        // Keep shrinking rows alive so ListView cannot re-estimate offscreen
-        // heights and shift its origin halfway through the collapse.
-        cacheBuffer: root.modelRows.length * (root.theme.notifications.historyDetailMaxHeight + 120)
+        model: groupModel
+        // Keep every source item measured so offscreen heights cannot jump.
+        cacheBuffer: root.records.length * (root.theme.notifications.historyDetailMaxHeight + 160)
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         spacing: 0
@@ -249,227 +164,52 @@ ColumnLayout {
             id: row
             required property var entry
             required property int index
-            readonly property bool expanded: !entry.isGroupHeader && root.expandedKey === entry.key
-            readonly property bool groupExpanded: entry.isGroupHeader && root.expandedSource === entry.groupKey
-            readonly property int inset: 0
-            readonly property bool startsDay: !entry.inGroup && (entry.groupIndex === 0
-                || !root.groups[entry.groupIndex - 1]
-                || root.dayKey(entry.timestamp) !== root.dayKey(root.groups[entry.groupIndex - 1].records[0].timestamp))
+            objectName: "notificationGroup:" + entry.key
+            readonly property bool startsDay: index === 0 || !root.groups[index - 1]
+                || root.dayKey(entry.records[0].timestamp) !== root.dayKey(root.groups[index - 1].records[0].timestamp)
             readonly property int headingHeight: startsDay ? 24 : 0
-            readonly property int bodyHeight: !entry.body ? 0 : expanded
-                ? Math.min(root.theme.notifications.historyDetailMaxHeight, bodyText.implicitHeight) : 18
-            property real bodyRevealHeight: bodyHeight
-            Behavior on bodyRevealHeight {
-                NumberAnimation { duration: root.theme.notifications.expandDuration; easing.type: Easing.InOutCubic }
-            }
-            readonly property real notificationHeight: 52 + bodyRevealHeight + 12
-            readonly property real baseHeight: headingHeight + (entry.isGroupHeader
-                ? notificationHeight * stackProgress + 24 * (1 - stackProgress) : notificationHeight)
-            readonly property real unfoldingProgress: root.animatedSource === entry.groupKey ? root.groupExpansionProgress
-                : root.closingSource === entry.groupKey ? root.groupClosingProgress : 0
-            readonly property real stackProgress: entry.isGroupHeader ? 1 - unfoldingProgress : 0
-            readonly property real groupProgress: entry.inGroup ? unfoldingProgress : 1
             property real revealProgress: 1
-            Behavior on revealProgress {
-                NumberAnimation { duration: root.theme.notifications.expandDuration; easing.type: Easing.InOutCubic }
-            }
-            ListView.onAdd: {
-                revealProgress = 0
-                Qt.callLater(() => revealProgress = 1)
-            }
+            width: historyList.width
+            height: (headingHeight + block.height + 12) * revealProgress
+            opacity: revealProgress
+            clip: true
             ListView.onRemove: {
                 ListView.delayRemove = true
-                removeAnimation.start()
+                removal.start()
             }
             SequentialAnimation {
-                id: removeAnimation
-                NumberAnimation { target: row; property: "revealProgress"; to: 0; duration: root.theme.notifications.expandDuration; easing.type: Easing.InOutCubic }
+                id: removal
+                NumberAnimation { target: row; property: "revealProgress"; to: 0; duration: root.theme.notifications.historyExpandDuration; easing.type: Easing.InOutCubic }
                 PropertyAction { target: row; property: "ListView.delayRemove"; value: false }
             }
-            width: historyList.width
-            // Reveal a single growing area from the top of the group. Each
-            // notification keeps its full size instead of unfolding in place.
-            readonly property real groupRevealHeight: !entry.inGroup || groupProgress >= 0.999 ? notificationHeight + 4
-                : Math.max(0, Math.min(notificationHeight + 4, entry.groupHeight * groupProgress - entry.groupOffset))
-            height: (entry.inGroup ? groupRevealHeight : baseHeight + 20 * stackProgress + 4) * revealProgress
-            opacity: revealProgress
-            enabled: groupProgress > 0
-            clip: true
-
-            Canvas {
-                id: stackEdges
-                anchors.fill: parent
-                opacity: row.stackProgress
-                onWidthChanged: requestPaint()
-                onHeightChanged: requestPaint()
-                Connections {
-                    target: row
-                    function onBaseHeightChanged() { stackEdges.requestPaint() }
-                    function onEntryChanged() { stackEdges.requestPaint() }
-                }
-                onPaint: {
-                    const context = getContext("2d")
-                    context.reset()
-                    context.clearRect(0, 0, width, height)
-                    context.lineWidth = 1
-                    context.lineJoin = "round"
-                    const layers = row.entry.groupCount > 2 ? 3 : 2
-                    for (let layer = layers - 1; layer >= 0; --layer) {
-                        const right = width - 17 + layer * 8 - 0.5
-                        const bottom = row.baseHeight - 1 + layer * 8 - 0.5
-                        context.strokeStyle = layer === 0 ? "#50616d" : "#40515d"
-                        context.beginPath()
-                        context.moveTo(right, row.headingHeight + 10 + layer * 8)
-                        context.lineTo(right, bottom - 5)
-                        context.quadraticCurveTo(right, bottom, right - 5, bottom)
-                        context.lineTo(44 + layer * 8, bottom)
-                        context.stroke()
-                    }
-                }
-            }
-
             MonoText {
                 theme: root.theme
-                text: root.dayLabel(row.entry.timestamp)
+                text: root.dayLabel(row.entry.records[0].timestamp)
                 font.pixelSize: 11
                 tone: root.theme.colors.textMuted
                 visible: row.startsDay
             }
-            Item {
-                id: notificationFace
-                objectName: "notificationFace:" + row.entry.key
-                width: parent.width
-                height: row.headingHeight + row.notificationHeight
-                opacity: row.entry.isGroupHeader ? row.stackProgress : 1
-                visible: opacity > 0
-                enabled: !row.entry.isGroupHeader || !row.groupExpanded
-                NotificationIcon {
-                    theme: root.theme
-                    x: 12 + row.inset; y: row.headingHeight + 8
-                    width: 24; height: 24
-                    appIcon: row.entry.appIcon || ""
-                    appName: row.entry.appName || ""
-                    desktopEntry: row.entry.source || ""
-                }
-                MonoText {
-                    theme: root.theme
-                    x: 44 + row.inset; y: row.headingHeight + 2
-                    width: Math.max(0, parent.width - x - 60)
-                    text: (row.entry.appName || "通知") + (row.entry.isGroupHeader ? " · " + row.entry.groupCount + " 則" : "")
-                    font.pixelSize: 11
-                    tone: root.theme.colors.textSecondary
-                    elide: Text.ElideRight
-                    textFormat: Text.PlainText
-                }
-                MonoText {
-                    theme: root.theme
-                    anchors.right: parent.right
-                    anchors.rightMargin: row.entry.isGroupHeader ? 30 : 6
-                    y: row.headingHeight + 2
-                    text: (row.entry.inGroup ? root.dayLabel(row.entry.timestamp) + " " : "")
-                        + Qt.formatDateTime(new Date(row.entry.timestamp), "HH:mm")
-                    font.pixelSize: 11
-                    tone: root.theme.colors.textMuted
-                }
-                MonoText {
-                    theme: root.theme
-                    x: 44 + row.inset; y: row.headingHeight + 22
-                    width: Math.max(0, parent.width - x - (row.entry.isGroupHeader ? 30 : 8))
-                    text: row.entry.summary || "通知"
-                    font.pixelSize: 14
-                    textFormat: Text.PlainText
-                    elide: Text.ElideRight
-                }
-                HoverHandler { cursorShape: Qt.PointingHandCursor }
-                TapHandler {
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    gesturePolicy: TapHandler.DragThreshold
-                    onTapped: (eventPoint, button) => {
-                        if (button === Qt.RightButton) root.closeRow(row.entry)
-                        else root.openRow(row.entry)
-                    }
-                }
-                Flickable {
-                    id: bodyScroll
-                    x: 44 + row.inset; y: row.headingHeight + 52
-                    width: Math.max(0, parent.width - x - (row.entry.isGroupHeader ? 30 : 8))
-                    height: row.bodyRevealHeight
-                    contentWidth: width
-                    contentHeight: bodyText.implicitHeight
-                    interactive: row.expanded && contentHeight > height
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-                    MonoText {
-                        id: bodyText
-                        theme: root.theme
-                        width: parent.width
-                        text: row.entry.body
-                        font.pixelSize: 12
-                        tone: root.theme.colors.textSecondary
-                        textFormat: Text.PlainText
-                        wrapMode: row.expanded ? Text.Wrap : Text.NoWrap
-                        elide: row.expanded ? Text.ElideNone : Text.ElideRight
-                    }
-                }
-            }
-            Item {
-                id: collapseControl
-                objectName: "collapseControl:" + row.entry.groupKey
+            NotificationGroup {
+                id: block
                 y: row.headingHeight
                 width: parent.width
-                height: 24
-                opacity: row.entry.isGroupHeader ? 1 - row.stackProgress : 0
-                visible: opacity > 0
-                enabled: row.groupExpanded
-                Canvas {
-                    x: 12; y: 4; width: 24; height: 16
-                    onPaint: {
-                        const context = getContext("2d")
-                        context.reset()
-                        context.strokeStyle = root.theme.colors.textSecondary
-                        context.lineWidth = 1.5
-                        context.lineCap = "round"
-                        context.lineJoin = "round"
-                        context.beginPath()
-                        context.moveTo(7, 5)
-                        context.lineTo(12, 10)
-                        context.lineTo(17, 5)
-                        context.stroke()
-                    }
-                }
-                Rectangle {
-                    x: 44; y: 12
-                    width: Math.max(0, parent.width - x)
-                    height: 1
-                    color: root.theme.colors.separator
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: root.closeRow(row.entry)
-                    Accessible.name: "收合此來源通知"
-                    Accessible.role: Accessible.Button
-                }
-            }
-            Rectangle {
-                anchors.bottom: parent.bottom
-                x: 44 + row.inset
-                width: Math.max(0, parent.width - x)
-                height: 1
-                color: root.theme.colors.separator
-                visible: !row.entry.isGroupHeader
+                theme: root.theme
+                group: row.entry
+                expanded: root.expandedSource === row.entry.key
+                expandedKey: root.expandedKey
+                onToggleRequested: root.toggleGroup(row.entry.key)
+                onDeleteRequested: root.deleteGroup(row.entry.key)
+                onRecordOpened: record => root.openRecord(record)
+                onRecordClosed: record => root.markRowRead(record)
             }
         }
-
         MonoText {
-            parent: historyList
             theme: root.theme
             anchors.centerIn: parent
             text: "沒有未讀通知"
             tone: root.theme.colors.textMuted
             font.pixelSize: 12
-            visible: historyList.count === 0
+            visible: root.records.length === 0
         }
     }
 }

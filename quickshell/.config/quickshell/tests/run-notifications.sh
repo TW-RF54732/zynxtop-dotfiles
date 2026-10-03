@@ -53,3 +53,5 @@ fi
 cat "$test_dir/click-log"
 if rg -q 'FAIL!|FAIL:|ERROR|TypeError|ReferenceError' "$test_dir/click-log"; then exit 1; fi
 rg -q 'PASS: notification single-click handling' "$test_dir/click-log"
+
+rg -q "PASS: source block deletion preserves other sources and read history" "$test_dir/click-log"
