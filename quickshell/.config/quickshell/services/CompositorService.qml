@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Hyprland
 
 Scope {
+    readonly property var focusedMonitor: Hyprland.focusedMonitor
     readonly property var workspaces: Hyprland.workspaces.values
     readonly property var activeWindow: Hyprland.activeToplevel
     readonly property var windows: Hyprland.toplevels.values

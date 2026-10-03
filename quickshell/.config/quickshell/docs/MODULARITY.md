@@ -87,7 +87,7 @@ PanelWindow {
 }
 ```
 
-新面板的 layer-shell namespace 與 compositor 模糊規則由該面板自行指定。範例預設沒有加入正式入口，Dashboard 也尚未實作。
+新面板的 layer-shell namespace 與 compositor 模糊規則由該面板自行指定。範例預設沒有加入正式入口，正式 Dashboard 與右側 Sidebar 由各自入口組裝。
 
 ## 檢查
 
@@ -101,3 +101,12 @@ qs log -t 30
 Smoke 測試使用獨立設定副本（排除 qmlls 連結）、offscreen 畫面及暫存 state/runtime，避免建立桌面面板或更動正式使用次數；檢查搜尋、控制器、清單選取、長清單捲動、兩端回彈、尺寸、範例載入及 JSON 保存。隔離環境沒有 Pipewire socket 時，可能顯示連線錯誤，測試仍能驗證無音訊後端的元件載入。
 
 Wayland 實機仍需確認焦點、點擊外部關閉、動畫、長清單捲動、多螢幕與狀態變化。`qmllint` 對 Quickshell 的 PanelWindow 可建立性與 FileViewAdapter 型別有既存警告；需配合實際 Quickshell 載入日誌判斷。
+
+
+## 右側個人側欄
+
+- `Sidebar` 接收 `theme`、`compositor`、`user`、`clock`、`notifications` 與可選的 `widgets: list<Component>`；公開 `show()`、`hide()`、`toggle()`，IPC target 為 `sidebar`。視窗與透明外部點擊區使用 overlay layer，僅目標螢幕取得鍵盤焦點。
+- `SidebarController` 接收螢幕清單與焦點螢幕名稱，固定每次展開的目標，螢幕移除時收合。`AnimatedVisibility` 管理動畫結束後的視窗卸載。
+- `sidebar/` 組裝個人卡、月曆及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
+- `UserService` 暴露 `displayName`、`avatar`，以一次性 Python 程序讀取目前帳號及本地頭像；`CompositorService.focusedMonitor` 暴露目前焦點螢幕。
+- `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。

@@ -41,6 +41,16 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
+    name = "quickshell-sidebar-glass",
+    match = {
+        namespace = "^quickshell-sidebar$",
+    },
+    blur = true,
+    xray = true,
+    ignore_alpha = 0.01,
+})
+
+hl.layer_rule({
     name = "quickshell-inputmethod-glass",
     match = {
         namespace = "^quickshell-inputmethod$",

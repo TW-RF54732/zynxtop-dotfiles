@@ -29,7 +29,7 @@ Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配�
 | `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
 | `Super + V` | 在文字游標旁開啟剪貼簿歷史 |
 
-Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，重啟和關機需在面板內確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料與控制預計由之後的右側選單承載，目前尚未建立。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
+Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，重啟和關機需在面板內確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料、月曆與通知中心由右側個人側欄承載。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
 
 IPC 介面：
 
@@ -63,7 +63,7 @@ qs ipc call osd showFor star "設定已套用" 3000
 
 通知中心已從 Dashboard 移出，模組保留，目前沒有選單入口。以下為模組既有功能：列表只顯示未讀，同一來源自動合成一疊，顯示最新訊息與未讀數量；左鍵點擊堆疊可展開個別通知，左鍵點擊通知查看完整內文；重複左鍵保持展開。長內文限制顯示高度，可在內容區捲動。右鍵關閉單則通知並標為已讀、從列表移除；切換到另一則也會將上一則已展開的通知標為已讀。展開後上方的「向下圖示＋橫線」可用左鍵或右鍵收合整疊，其餘未讀通知保留。標題使用英文，不顯示來源與未讀總數，也沒有勾、叉按鈕。「清除」移除全部歷史，不會關閉正在顯示的通知。圖示依序使用通知提供的圖示、來源應用程式的桌面圖示，最後以向量鈴鐺備援。
 
-歷史開始從通知服務接收的訊息累積，包括已逾時或關閉的通知；同一則通知的更新會替換原紀錄，transient 通知不存入歷史。文字快照及已讀狀態保存在 `Quickshell.stateDir/notification-history.json`，重新啟動後仍可查看，最多保留最新 500 則。通知已關閉後不保留可執行動作。通知中心目前未掛載，模組保留在 `dashboard/NotificationCenter.qml`，資料與儲存仍由 `services/NotificationService.qml` 管理。
+歷史開始從通知服務接收的訊息累積，包括已逾時或關閉的通知；同一則通知的更新會替換原紀錄，transient 通知不存入歷史。文字快照及已讀狀態保存在 `Quickshell.stateDir/notification-history.json`，重新啟動後仍可查看，最多保留最新 500 則。通知已關閉後不保留可執行動作。通知中心掛載於右側個人側欄，沿用 `dashboard/NotificationCenter.qml`，資料與儲存仍由 `services/NotificationService.qml` 管理。
 
 ## 剪貼簿
 
@@ -311,3 +311,30 @@ git diff --check
 ```
 
 若 `qmllint` 不在 PATH，可使用 Qt 安裝目錄內的執行檔；本機路徑為 `/usr/lib/qt6/bin/qmllint`。
+
+
+## 右側個人側欄
+
+`Super+D` 切換右側欄；`Esc` 或點擊面板外部（包括其他螢幕）關閉。外部點擊會被消耗，不傳給後方視窗。側欄只在開啟時有焦點的螢幕顯示，展開期間不跟隨滑鼠移動；螢幕拔除時關閉。上方 Dashboard 仍由 `Super+W` 獨立控制。
+
+側欄寬度預設 400px，右側與底部保留 24px，位於正常 Top Bar 下方，以 220ms 動畫滑入／滑出，不改變工作區大小。介面沿用玻璃背景；Hyprland 的 `quickshell-sidebar` layer rule 使用 `ignore_alpha = 0.01`，透明外部區域不模糊。尺寸與動畫集中於 `Style.qml` 的 `sidebar`。
+
+由上至下為帳號頭像／名稱／UTC 日期、週一開始的六列月曆、未讀通知。頭像依序讀取 `~/.face.icon`、`~/.face`；沒有可用圖片時顯示名稱首字。日期共用 Top Bar 的 UTC 時鐘。月曆支援上／下月及回到今天，每次重新開啟回到本月，不串接行程。通知沿用來源分組與已讀操作，開啟面板不會自動標為已讀；「清除」沿用原有行為，刪除所有通知歷史。小螢幕讓上半部獨立捲動，通知保有自己的捲動區。
+
+```sh
+qs ipc call sidebar toggle
+qs ipc call -- sidebar show
+qs ipc call -- sidebar hide
+```
+
+`show` 與 Quickshell CLI 子命令同名，因此明確使用 `--` 分隔位置參數。
+
+未來小工具透過 `Sidebar.widgets` 的 `list<Component>` 加入，排列於月曆之後、通知之前。各小工具用 `implicitHeight` 宣告高度，寬度由容器提供；主題與所需服務由 Component 明確注入。例如：
+
+```qml
+widgets: [Component {
+    MyWidget { theme: sharedTheme; clock: clockService }
+}]
+```
+
+驗證：`bash tests/run-sidebar.sh` 執行隔離的月曆、版面及生命週期測試。`bash tests/run-sidebar-wayland.sh` 必須在 Hyprland 工作階段執行，會短暫開啟真實面板以驗證點擊、Esc 及連續切換，使用私人 D-Bus 與暫存通知資料，不接管桌面通知服務。新增檔案後依上方 Stow 流程重新建立連結。

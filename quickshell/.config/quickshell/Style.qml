@@ -90,6 +90,14 @@ QtObject {
         readonly property bool horizontal: false
     }
 
+    readonly property var sidebar: QtObject {
+        readonly property int width: 400
+        readonly property int margin: 24
+        readonly property int padding: 20
+        readonly property int gap: 8
+        readonly property int animationDuration: 220
+    }
+
     readonly property var dashboard: QtObject {
         readonly property int height: 300
         readonly property int gap: 8

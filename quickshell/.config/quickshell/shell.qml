@@ -20,6 +20,15 @@ ShellRoot {
     InputMethodService { id: inputMethodService }
     NotificationService { id: notificationService; defaultTimeout: sharedTheme.notifications.defaultTimeout }
     WireGuardService { id: wireGuardService }
+    UserService { id: userService }
+
+    Sidebar {
+        theme: sharedTheme
+        compositor: compositorService
+        user: userService
+        clock: clockService
+        notifications: notificationService
+    }
 
     InputMethodWindow {
         theme: sharedTheme
