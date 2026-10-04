@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+config="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/settings.qml"
+page="${1:-}"
+call=(show)
+if [[ -n "$page" ]]; then call=(openPage "$page"); fi
+if qs ipc -p "$config" call settings "${call[@]}" 2>/dev/null; then exit 0; fi
+qs -p "$config" -n -d
+for attempt in {1..30}; do
+    if qs ipc -p "$config" call settings "${call[@]}" 2>/dev/null; then exit 0; fi
+    sleep 0.1
+done
+exit 1

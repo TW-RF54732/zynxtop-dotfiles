@@ -1,0 +1,344 @@
+# Quickshell Desktop Shell
+
+QML 中文候選框已接入入口，沿用共用主題、玻璃容器和服務注入。可重用模組、編譯依賴、停用方式與 Wayland 限制見 [中文候選框文件](docs/INPUT_METHOD.md)。
+
+以 Kitty 的灰黑玻璃風格為基礎，自製搜尋、常用度排序與動畫的 Quickshell 應用程式啟動器。共用設計元件可延伸到 Top Bar 與其他面板。
+
+Top Bar 的功能範圍、互動與預定結構記錄於 [`docs/TOP_BAR_PLAN.md`](docs/TOP_BAR_PLAN.md)。
+
+## Top Bar
+
+通知列位於右上角，與 Top Bar 等高。最新通知顯示應用程式 icon 與標題，較早通知向左排列成緊湊的 icon 區段；空間不足時，靠近 bar 的位置顯示 `+N`，代表未顯示的通知數。有通知時 bar 右側自動收窄留出空間，全部關閉後恢復原寬度。滑鼠移到某個 icon 時，該則通知在原本位置橫向展開為 icon 與標題，其他通知縮回 icon，維持通知順序與整列寬度，同一張卡片下方也會展開詳細內文。內文最多 4 行、額外高度上限 100px，過長會截斷；滑鼠移到內文區仍保持展開，空白內文不增加高度。離開後以動畫恢復最新通知展開並收合內文。點擊 `+N` 可依序查看較早通知，通知仍依時間排列；點擊通知執行預設動作（沒有動作則關閉），右鍵關閉該則通知。一般通知預設 16 秒後消失，依應用程式指定的有效時間調整；指定不逾時或未指定時間的緊急通知會保留到關閉。通知同步顯示於各螢幕；尺寸與預設時間可在 `Style.qml` 的 `notifications` 區塊調整。
+
+通知列在同一個 window 內畫出多張 QML 卡片；背景和交疊外框先在共用 Canvas 內以實色依序繪製，後面的卡片邊緣會被前面的遮住，整層最後才套用半透明度，保留卡排輪廓並避免背景疊色；文字與點擊區仍依相鄰卡片的位置裁切。通知列共用 `quickshell-topbar` layer，沿用 Hyprland `quickshell-topbar-glass` 的 `blur`、`xray` 和 `ignore_alpha = 0.01` 規則。通知接收由 `services/NotificationService.qml` 的 Quickshell `NotificationServer` 負責，版面在 `notifications/NotificationStrip.qml`。同一桌面應只啟用一個通知服務；若原本使用 mako 或 dunst，啟用此配置前需停用原服務。可用 `notify-send "測試通知" "通知內容"` 試看，或執行 `bash tests/run-notifications.sh` 驗證堆疊、溢出計數、替換、關閉與逾時。
+
+新通知從螢幕右側外滑入並淡入，通過右側留白後停在通知列。既有卡片保留，被推開時以位置動畫滑到新位置，不會跟著重新播放出場動畫。hover 使用原位橫向展開與文字裁切，避免動畫中反覆重新截斷文字；`Style.qml` 的 `notifications.slideDuration`（320ms）與 `expandDuration`（500ms）可分別調整 popup 與展開速度。
+
+開啟 special workspace 時，工作區區域只顯示該工作區的星星圖示；關閉後恢復一般工作區數字。
+
+Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配合 Hyprland blur 與 xray。Launcher 使用 76% 不透明度，Top Bar 使用 65%，讓浮空島呈現更明顯的模糊。版面針對超寬螢幕排列為工作區、可伸展的目前視窗標題、日期時間與 Dashboard 入口；網路離線和音訊靜音時，右側會增加單色狀態圖示，不顯示應用程式品牌圖標。
+
+| 操作 | 功能 |
+| --- | --- |
+| 點擊工作區 | 切換至該工作區 |
+| 點擊星星圖示 | 關閉目前的 special workspace |
+| 在工作區上滾動 | 切換前後已有的工作區 |
+| 點擊靜音圖示 | 解除靜音 |
+| 在靜音圖示上滾動 | 調整輸出音量 |
+| 點擊 Dashboard 圖示 | 展開／收合 Dashboard |
+| `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
+| `Super + V` | 在文字游標旁開啟剪貼簿歷史 |
+
+Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，重啟和關機需在面板內確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料、月曆與通知中心由右側個人側欄承載。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
+
+IPC 介面：
+
+```sh
+qs ipc call topbar toggleDashboard
+qs ipc call topbar closeDashboard
+```
+
+## OSD
+
+OSD 位於 Top Bar 左側的同一個透明視窗區域。調整音量時以極簡的圖示、進度條與百分比短暫顯示；停止調整後自動消失。斷網與靜音屬於常駐狀態，靜音只顯示正方形圖示；狀態恢復後自動移除。Top Bar 本身不再重複顯示靜音或斷網圖示。
+
+其他腳本可透過 IPC 加入或移除常駐狀態：
+
+```sh
+qs ipc call osd set vpn star "VPN 已連線"
+qs ipc call osd remove vpn
+qs ipc call osd clear
+```
+
+也可顯示一次性提醒；`showFor` 的時間單位為毫秒：
+
+```sh
+qs ipc call -- osd show star "設定已套用"
+qs ipc call osd showFor star "設定已套用" 3000
+```
+
+`set` 的參數依序為唯一 ID、圖示名稱與文字。文字留空時只顯示正方形圖示。內建圖示名稱包含 `star`、`muted`、`offline` 與 `volume`。
+
+## 通知中心
+
+通知中心位於右側個人側欄，只顯示未讀通知，依來源合成區塊。區塊標題固定顯示最新訊息與未讀數量；左鍵點擊同一標題或箭頭可切換展開／收合，通知清單作為完整區域向下展開、由下往上收起，標題與各則通知不會同時縮放或交叉淡出。快速連點會從當下高度反向播放；不同來源的動畫各自獨立。動畫時間由 `Style.qml` 的 `notifications.historyExpandDuration` 控制（預設 280ms），不影響 Top Bar 通知動畫。
+
+每個區塊右上角的「×」可在收合或展開時刪除該來源目前所有未讀通知；只有一則的區塊也可刪除。其他來源與該來源的已讀歷史保留，正在顯示的 Top Bar 通知不受影響。「清除」仍會移除全部歷史。
+
+左鍵點擊群組內的通知查看完整內文，重複左鍵保持展開；長內文限制顯示高度，可在內容區捲動。右鍵關閉單則通知並標為已讀；切換到另一則或收合群組，也會將上一則已展開的通知標為已讀，其餘未讀保留。圖示依序使用通知提供的圖示、來源應用程式的桌面圖示，最後以向量鈴鐺備援。
+
+歷史開始從通知服務接收的訊息累積，包括已逾時或關閉的通知；同一則通知的更新會替換原紀錄，transient 通知不存入歷史。文字快照及已讀狀態保存在 `Quickshell.stateDir/notification-history.json`，重新啟動後仍可查看，最多保留最新 500 則。通知已關閉後不保留可執行動作。通知中心掛載於右側個人側欄，沿用 `dashboard/NotificationCenter.qml`，資料與儲存仍由 `services/NotificationService.qml` 管理。
+
+## 剪貼簿
+
+按下 `Super + V` 會讀取 `cliphist` 的最近 50 筆歷史，並在目前文字游標旁顯示清單；無法取得文字游標位置時，會改在目前螢幕下方中央顯示。使用 `↑`／`↓` 選擇、`Enter` 貼上、`Esc` 關閉，也可直接以滑鼠點擊項目。圖片等二進位項目會顯示類型與尺寸摘要。
+
+需要 `cliphist`、`wl-copy`，並由桌面工作階段常駐執行 `wl-paste --watch cliphist store`。IPC 介面：
+
+```sh
+qs ipc call clipboard toggle
+qs ipc call -- clipboard show
+qs ipc call clipboard hide
+```
+
+文字游標定位共用中文候選框的唯讀 Hyprland caret adapter；選中項目後透過 Hyprland `sendshortcut` 將 `Ctrl+V` 送回原本的作用中視窗。
+
+## 視覺設計
+
+- 灰黑半透明背景，模糊由 Hyprland 提供。
+- 5px 深灰外框與 5px 外輪廓圓角。
+- 反白與外框使用相同實色，避免透明圖層疊色造成色差。
+- 選中列與左右外框以 5px 內凹弧線連接。
+- JetBrains Mono Nerd Font Mono 等寬字體，文字以白、淺灰與暗灰區分層級。
+- 無全螢幕遮罩；未輸入時只顯示輸入框，沒有 placeholder。
+- 輸入框水平置中，中心位於螢幕高度的 1/3。
+- 結果清單向下展開，輸入框位置固定；底部保留無分隔線的空白。
+- 開關時由中央向左右攤開、收合，呈現捲軸效果。
+
+## 依賴與啟動
+
+需要 Quickshell、Python 3（Dashboard 系統數據）、Wayland 環境與可用的字體、圖示主題。GPU 使用率優先讀取 DRM 的 `gpu_busy_percent`，NVIDIA 使用 `nvidia-smi`（需有正常運作的驅動）。目前使用 Hyprland 提供模糊及快捷鍵；沒有 npm、Python 或外部搜尋套件依賴。
+
+此設定以 GNU Stow 從 dotfiles 儲存庫部署。進入儲存庫根目錄後執行：
+
+```sh
+cd ~/dotfiles
+stow --no-folding --target="$HOME" quickshell
+```
+
+`--no-folding` 會逐項建立連結，讓 `~/.config/quickshell/` 保持為一般目錄；Quickshell 產生的 `.qmlls.ini` 等 runtime 檔案便不會寫入儲存庫。新增設定檔後也要重新執行同一條 `stow` 指令，才能為新檔案建立連結。若要重新套用整個 package，可執行：
+
+```sh
+stow --restow --no-folding --target="$HOME" quickshell
+```
+
+完成後執行：
+
+```sh
+qs
+```
+
+也可以指定設定路徑：
+
+```sh
+qs -p ~/.config/quickshell
+```
+
+此儲存庫只包含 Quickshell 設定，Hyprland 的啟動、快捷鍵與模糊規則需在 compositor 設定中配置。
+
+## 操作
+
+| 操作 | 功能 |
+| --- | --- |
+| `Super + Space` | 開關 Launcher，需設定 Hyprland 快捷鍵 |
+| 輸入文字 | 搜尋應用程式 |
+| 空白時按 `Tab` | 顯示全部應用程式，依啟動次數排序 |
+| `↑` / `↓` | 選取前後項目 |
+| `Enter` | 啟動選中項目，或執行 shell 指令 |
+| `Esc` / 點擊面板外 | 關閉 Launcher |
+| 滑鼠移入 / 點擊項目 | 選取 / 啟動項目 |
+| 滑鼠滾輪 | 捲動清單 |
+| `> 指令` | 使用 `sh -lc` 執行 shell 指令 |
+
+清單最多顯示七列，但保留完整結果，可捲動瀏覽。反白抵達可視清單底列後，再次按向下才會平滑捲動，把新選中項目帶回中央；頂部採對稱行為。接近清單末端時，捲動位置會限制在可行範圍。抵達真正的第一項或最後一項後再次操作，會短距離回彈，不會循環瞬移到另一端。
+
+IPC 介面：
+
+```sh
+qs ipc call launcher toggle
+qs ipc call -- launcher show
+qs ipc call launcher hide
+```
+
+`show` 與 Quickshell CLI 子命令同名，因此以 `--` 分隔，確保呼叫 Launcher 方法。
+
+目前使用的 Hyprland Lua 快捷鍵設定為：
+
+```lua
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("qs ipc call launcher toggle"))
+```
+
+## 模糊背景
+
+Launcher 的 layer-shell namespace 為 `quickshell-launcher`。目前使用的 Hyprland Lua 規則如下；若使用不同格式的 Hyprland 設定，請以相同 namespace 建立對應的 layer rule。
+
+```lua
+hl.layer_rule({
+    name = "quickshell-launcher-glass",
+    match = {
+        namespace = "^quickshell-launcher$",
+    },
+    blur = true,
+    ignore_alpha = 0.01,
+})
+```
+
+## 搜尋與常用度
+
+應用程式來源是 Quickshell 的 `DesktopEntries.applications`，搜尋、排序、常用度保存與啟動由 `services/ApplicationsService.qml` 提供；Launcher 控制器與畫面透過注入的服務操作。
+
+搜尋依序評估完全相同、名稱開頭、單字開頭、名稱包含、通用名稱、關鍵字，以及依序出現的模糊字元匹配。符合搜尋的項目再加入常用度加權：
+
+```text
+常用度分數 = min(120, log2(啟動次數 + 1) × 20)
+```
+
+文字相關性為主要依據，常用度加權有上限。空白輸入按 `Tab` 時，直接依啟動次數排序，次數相同則依名稱排序。`NoDisplay=true` 的項目會被略過。
+
+使用次數只統計經由此 Launcher 開啟的應用程式，透過 `FileView` 與 `JsonAdapter` 保存於：
+
+```text
+Quickshell.stateDir/launcher-usage.json
+```
+
+Shell 指令不納入應用程式使用次數。
+
+啟動應用程式時，Launcher 會先尋找同名的系統匣項目並呼叫它的啟用動作；這讓 Discord 等關閉視窗後仍常駐背景的應用可以再次顯示。找不到對應的系統匣項目時，才執行 `.desktop` 項目的啟動指令。
+
+## 加入應用程式
+
+Launcher 讀取標準 XDG 應用程式目錄中的 `.desktop` 項目。一般系統套件會將項目安裝到 `/usr/share/applications/`；個人程式可放在 `~/.local/share/applications/`。Flatpak 等來源需透過桌面環境的 `XDG_DATA_DIRS` 提供對應目錄。
+
+個人項目範例：
+
+```ini
+# ~/.local/share/applications/my-app.desktop
+[Desktop Entry]
+Type=Application
+Name=My App
+Comment=My custom application
+Exec=/absolute/path/to/my-app
+Icon=/absolute/path/to/icon.png
+Terminal=false
+Categories=Utility;
+```
+
+安裝後重新開啟 Launcher 搜尋名稱，或按 `Tab` 查看全部。如果沒有出現，檢查 `.desktop` 路徑、`Name`、`Exec` 與 `NoDisplay`，並確認目前 Quickshell 行程能讀取安裝目錄；必要時重新啟動該 Quickshell 設定。
+
+## WireGuard 控制器
+
+Launcher 中的 `WireGuard` 項目會透過 IPC 開啟內建控制視窗。設定選單預設包含 `wg`，也會保存經由 GUI 新增的設定；每個設定可獨立顯示狀態及連線／斷線，因此可以同時啟用多個介面。
+
+視窗採用 WireGuard 官方桌面程式相近的雙欄結構：左側列出 tunnels，右側顯示選中項目的狀態、服務錯誤與 Activate／Deactivate 操作。`ADD TUNNEL` 提供名稱欄及多行設定框，可直接貼上完整的 `wg-quick` `.conf`；名稱同時作為 Linux 介面與 `/etc/wireguard/<name>.conf` 檔名，長度限制為 15 個合法介面字元。
+
+新設定以 `0600` 暫存並經 PolicyKit 安裝至 `/etc/wireguard/`，PrivateKey 不會放入指令列或日誌。`PreUp`、`PostUp`、`PreDown`、`PostDown` 等 hook 會由 `wg-quick` 以 root 執行，因此只應貼上可信任的設定。服務啟動失敗時，右側會顯示 `systemctl status` 的實際錯誤，而不只顯示泛用失敗訊息。
+
+安裝設定及切換服務時使用 PolicyKit 系統驗證，不安裝免密碼規則，也不改變服務的開機啟用狀態。GUI 設定清單保存在 `Quickshell.stateDir/wireguard-profiles.json`。
+
+含有 `DNS=` 的 `wg-quick` 設定需要 `resolvconf`。此主機使用 `openresolv`，並透過 `/etc/NetworkManager/conf.d/10-openresolv.conf` 設定 `rc-manager=resolvconf`，讓 NetworkManager 與 WireGuard 共用同一套 DNS 管理，避免啟停 tunnel 時出現 `resolvconf: signature mismatch`。
+
+IPC 介面：
+
+```sh
+qs ipc call -- wireguard show
+qs ipc call -- wireguard hide
+qs ipc call -- wireguard toggle
+```
+
+## 設計系統與檔案結構
+
+主題與服務由入口建立一次，透過 QML 屬性注入功能模組。新增面板的介面與完整範例見 [`docs/MODULARITY.md`](docs/MODULARITY.md)。
+
+```text
+.
+├── shell.qml                 # 建立共用主題、服務，組裝面板
+├── Style.qml                 # 統一設計參數
+├── Launcher.qml              # Launcher 視窗、焦點、IPC 與開關動畫
+├── TopBar.qml                # 多螢幕視窗、版面、掃線與 Dashboard 狀態
+├── components/               # 容器、文字、圖示、按鈕、分隔線、反白
+├── services/                 # Compositor、音訊、網路、時鐘、應用程式
+├── launcher/                 # 控制器、輸入框、清單與結果列
+├── topbar/                   # 工作區、視窗標題、時鐘、狀態及 Dashboard 入口
+├── examples/AudioPanel.qml   # 可複製的跨面板組裝範例
+├── tests.qml                 # 不建立桌面視窗的模組 smoke 測試
+└── tests/run-smoke.sh         # 隔離 runtime/state 並驗證使用次數保存
+```
+
+視覺元件不直接讀取系統服務；功能元件只接收所需的主題、服務、資料及操作訊號。各螢幕使用自己的 MonitorContext，共用同一份系統服務。
+
+`Style.qml` 分成以下區塊：
+
+| 區塊 | 內容 |
+| --- | --- |
+| `colors` | 面板、外框、分隔線、文字與文字選取色 |
+| `typography` | 字體與字級 |
+| `geometry` | 外框、圓角、內凹弧度、留白及共用按鈕／圖示尺寸 |
+| `motion` | 動畫時間與回彈距離 |
+| `launcher` | Launcher 專用尺寸、位置、圖示與顯示列數 |
+| `topBar` | Top Bar 高度、邊距、文字、圖示與互動區尺寸 |
+
+QML 的八位色碼採 `#AARRGGBB`，例如背景 `#8f292d33` 的前兩位 `8f` 控制不透明度。外框與反白共用 `colors.frame`，使用實色以維持一致的顯示結果。
+
+動畫設定：
+
+| 參數 | 預設值 | 用途 |
+| --- | --- | --- |
+| `fastDuration` | 140ms | 面板展開、收合、淡入與高度變化 |
+| `selectionDuration` | 110ms | 反白等速平移 |
+| `listScrollDuration` | 180ms | 清單等速捲動，將選中項目帶回中央 |
+| `edgeBounceDuration` | 120ms | 邊界回彈的單程時間 |
+| `edgeBounceDistance` | 18px | 邊界回彈距離 |
+
+新面板接收入口的主題，將同一實例傳給共用元件的 `theme`：
+
+```qml
+import QtQuick
+import "components"
+
+Item {
+    id: root
+    required property var theme
+
+    GlassFrame {
+        theme: root.theme
+        width: 300
+        height: 60
+
+        MonoText {
+            theme: root.theme
+            anchors.centerIn: parent
+            text: "Quickshell"
+        }
+    }
+}
+```
+
+`Separator.qml` 仍保留供其他面板使用，Launcher 底部留白沒有分隔線。`.qmlls.ini` 是 Quickshell 產生的執行期連結，已透過 `.gitignore` 排除。
+
+## 檢查與日誌
+
+```sh
+/usr/lib/qt6/bin/qmllint -I /usr/lib/qt6/qml *.qml components/*.qml launcher/*.qml services/*.qml topbar/*.qml examples/*.qml
+bash tests/run-smoke.sh
+qs log -t 30
+git diff --check
+```
+
+若 `qmllint` 不在 PATH，可使用 Qt 安裝目錄內的執行檔；本機路徑為 `/usr/lib/qt6/bin/qmllint`。
+
+
+## 右側個人側欄
+
+`Super+D` 切換右側欄；`Esc` 或點擊面板外部（包括其他螢幕）關閉。外部點擊會被消耗，不傳給後方視窗。側欄只在開啟時有焦點的螢幕顯示，展開期間不跟隨滑鼠移動；螢幕拔除時關閉。上方 Dashboard 仍由 `Super+W` 獨立控制。
+
+側欄寬度預設 400px，右側與底部保留 24px，位於正常 Top Bar 下方，以 220ms 動畫滑入／滑出，不改變工作區大小。介面沿用玻璃背景；Hyprland 的 `quickshell-sidebar` layer rule 使用 `ignore_alpha = 0.01`，透明外部區域不模糊。尺寸與動畫集中於 `Style.qml` 的 `sidebar`。
+
+由上至下為帳號頭像／名稱／UTC 日期、週一開始的六列月曆、未讀通知。頭像依序讀取 `~/.face.icon`、`~/.face`；沒有可用圖片時顯示名稱首字。日期共用 Top Bar 的 UTC 時鐘。月曆支援上／下月及回到今天，每次重新開啟回到本月，不串接行程。通知沿用來源分組與已讀操作，開啟面板不會自動標為已讀；「清除」沿用原有行為，刪除所有通知歷史。小螢幕讓上半部獨立捲動，通知保有自己的捲動區。
+
+```sh
+qs ipc call sidebar toggle
+qs ipc call -- sidebar show
+qs ipc call -- sidebar hide
+```
+
+`show` 與 Quickshell CLI 子命令同名，因此明確使用 `--` 分隔位置參數。
+
+未來小工具透過 `Sidebar.widgets` 的 `list<Component>` 加入，排列於月曆之後、通知之前。各小工具用 `implicitHeight` 宣告高度，寬度由容器提供；主題與所需服務由 Component 明確注入。例如：
+
+```qml
+widgets: [Component {
+    MyWidget { theme: sharedTheme; clock: clockService }
+}]
+```
+
+驗證：`bash tests/run-sidebar.sh` 執行隔離的月曆、版面及生命週期測試。`bash tests/run-sidebar-wayland.sh` 必須在 Hyprland 工作階段執行，會短暫開啟真實面板以驗證點擊、Esc 及連續切換，使用私人 D-Bus 與暫存通知資料，不接管桌面通知服務。新增檔案後依上方 Stow 流程重新建立連結。

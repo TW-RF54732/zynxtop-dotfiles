@@ -17,3 +17,7 @@ as local copies where needed.
 
 Hyprland retains the existing machine-specific monitor settings, wallpaper paths,
 and local script paths. Wallpaper images and local scripts are not included.
+
+The [Settings Center project](archives/settings-center/README.md) is archived:
+its source and original plan are preserved for reference only. It is not in use
+and is not part of the Stow packages installed above.

@@ -1,0 +1,4 @@
+(^|/)(__pycache__|\.git|\.qmlls\.ini)(/|$)
+\.pyc$
+(^|/)\.gitignore$
+(^|/)\.stow-local-ignore$

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+exec python3 -B "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/settings/session.py" "$@"

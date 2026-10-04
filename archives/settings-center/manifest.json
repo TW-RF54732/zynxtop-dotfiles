@@ -1,0 +1,39 @@
+{
+  "status": "archived-not-in-use",
+  "date": "2026-10-04",
+  "baseCommit": "d9fce416b915689c733f199ebdedffe4363f2646",
+  "modifiedFiles": [
+    "hypr/.config/hypr/hyprland.lua",
+    "hypr/.config/hypr/modules/autostart.lua",
+    "hypr/.config/hypr/modules/programs.lua",
+    "hypr/.config/hypr/modules/rules.lua",
+    "kitty/.config/kitty/kitty.conf",
+    "quickshell/.config/quickshell/.gitignore",
+    "quickshell/.config/quickshell/Style.qml",
+    "quickshell/.config/quickshell/TopBar.qml",
+    "quickshell/.config/quickshell/services/AudioService.qml",
+    "quickshell/.config/quickshell/services/ClockService.qml",
+    "quickshell/.config/quickshell/services/NotificationService.qml",
+    "quickshell/.config/quickshell/services/WireGuardService.qml",
+    "quickshell/.config/quickshell/topbar/Clock.qml"
+  ],
+  "newFiles": [
+    "quickshell/.config/quickshell/settings/schema.py",
+    "quickshell/.config/quickshell/settings/backend.py",
+    "quickshell/.config/quickshell/settings/monitor_guard.py",
+    "quickshell/.config/quickshell/settings/SettingsWindow.qml",
+    "quickshell/.config/quickshell/settings/ServicePage.qml",
+    "quickshell/.config/quickshell/settings/session.py",
+    "quickshell/.config/quickshell/settings/MonitorEditor.qml",
+    "quickshell/.config/quickshell/settings/system_settings.py",
+    "quickshell/.config/quickshell/settings/test_backend.py",
+    "quickshell/.config/quickshell/services/SettingsPreferences.qml",
+    "quickshell/.config/quickshell/settings-tests.qml",
+    "quickshell/.config/quickshell/settings.qml",
+    "quickshell/.config/quickshell/tests/run-settings.sh",
+    "quickshell/.local/bin/settings-center",
+    "quickshell/.local/bin/settings-session",
+    "quickshell/.local/share/applications/org.dotfiles.Settings.desktop",
+    "quickshell/.stow-local-ignore"
+  ]
+}

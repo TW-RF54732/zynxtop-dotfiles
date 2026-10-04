@@ -1,0 +1,6 @@
+.agents/
+.codex/
+*.onesource
+.onesourcerc
+
+**onesource**

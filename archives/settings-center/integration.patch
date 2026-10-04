@@ -1,0 +1,423 @@
+diff --git a/hypr/.config/hypr/hyprland.lua b/hypr/.config/hypr/hyprland.lua
+index 07ff1a1..65a5553 100644
+--- a/hypr/.config/hypr/hyprland.lua
++++ b/hypr/.config/hypr/hyprland.lua
+@@ -19,3 +19,14 @@ require("modules.keybinds")
+ -- plugins
+ require("plugins.dynamic_cursors")
+ require("modules.programs_appearance")
++
++-- User settings live outside Stow; missing overrides preserve the base config.
++local settingsRoot = (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/settings-center/"
++for _, name in ipairs({"hyprland.lua", "monitors.lua"}) do
++    local path = settingsRoot .. name
++    local file = io.open(path, "r")
++    if file then
++        file:close()
++        dofile(path)
++    end
++end
+diff --git a/hypr/.config/hypr/modules/autostart.lua b/hypr/.config/hypr/modules/autostart.lua
+index 84e676a..f606b5e 100644
+--- a/hypr/.config/hypr/modules/autostart.lua
++++ b/hypr/.config/hypr/modules/autostart.lua
+@@ -14,7 +14,8 @@ hl.on("hyprland.start", function ()
+     hl.exec_cmd("wl-paste --type image --watch cliphist store")
+     -- hl.exec_cmd("mako")
+     hl.exec_cmd("fcitx5")
+-    hl.exec_cmd("hyprpaper")
++    hl.exec_cmd("settings-session --wallpaper")
++    hl.exec_cmd("settings-session")
+     hl.exec_cmd("hyprpm reload")
+     hl.exec_cmd("qs -n -d")
+     
+diff --git a/hypr/.config/hypr/modules/programs.lua b/hypr/.config/hypr/modules/programs.lua
+index f6affe6..21ac1a5 100644
+--- a/hypr/.config/hypr/modules/programs.lua
++++ b/hypr/.config/hypr/modules/programs.lua
+@@ -2,9 +2,17 @@
+ ---- MY PROGRAMS ----
+ ---------------------
+ 
+-return {
++local programs = {
+     terminal = "kitty",
+     file_manager = "dolphin",
+     menu = "qs ipc call launcher toggle",
+     browser = "zen-browser",
+ }
++
++local path = (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/settings-center/programs.lua"
++local file = io.open(path, "r")
++if file then
++    file:close()
++    for key, value in pairs(dofile(path)) do programs[key] = value end
++end
++return programs
+diff --git a/hypr/.config/hypr/modules/rules.lua b/hypr/.config/hypr/modules/rules.lua
+index 1598807..317fc37 100644
+--- a/hypr/.config/hypr/modules/rules.lua
++++ b/hypr/.config/hypr/modules/rules.lua
+@@ -28,3 +28,10 @@ hl.window_rule({
+     move = "20 monitor_h-120",
+     float = true,
+ })
++
++hl.window_rule({
++    name = "settings-center-window",
++    match = { class = "^org[.]dotfiles[.]Settings$" },
++    float = true,
++    center = true,
++})
+diff --git a/kitty/.config/kitty/kitty.conf b/kitty/.config/kitty/kitty.conf
+index cbe44ad..95bf037 100644
+--- a/kitty/.config/kitty/kitty.conf
++++ b/kitty/.config/kitty/kitty.conf
+@@ -89,3 +89,6 @@ color14 #56B6C2
+ # White
+ color7  #ABB2BF
+ color15 #FFFFFF
++
++# Local Settings Center overrides (not managed by Stow); new windows only.
++globinclude ../settings-center/kitty.conf
+diff --git a/quickshell/.config/quickshell/.gitignore b/quickshell/.config/quickshell/.gitignore
+index dfbea23..ec8b06f 100644
+--- a/quickshell/.config/quickshell/.gitignore
++++ b/quickshell/.config/quickshell/.gitignore
+@@ -1 +1,3 @@
+ .qmlls.ini
++__pycache__/
++*.pyc
+diff --git a/quickshell/.config/quickshell/Style.qml b/quickshell/.config/quickshell/Style.qml
+index 6a71166..2514b78 100644
+--- a/quickshell/.config/quickshell/Style.qml
++++ b/quickshell/.config/quickshell/Style.qml
+@@ -1,10 +1,12 @@
+ import QtQuick
++import "services"
+ 
+ QtObject {
+     id: root
++    property SettingsPreferences preferences: SettingsPreferences {}
+ 
+     readonly property var colors: QtObject {
+-        readonly property color surface: "#c2111318"
++        readonly property color surface: Qt.rgba(17/255, 19/255, 24/255, root.preferences.value("surfaceOpacity", 0.76))
+         readonly property color topBarSurface: "#a6111318"
+         readonly property color frame: "#282C34"
+         readonly property color separator: "#282C34"
+@@ -17,12 +19,12 @@ QtObject {
+     }
+ 
+     readonly property var typography: QtObject {
+-        readonly property string family: "JetBrainsMono Nerd Font Mono"
+-        readonly property int promptSize: 25
+-        readonly property int inputSize: 21
+-        readonly property int bodySize: 16
+-        readonly property int detailSize: 12
+-        readonly property int emptySize: 14
++        readonly property string family: root.preferences.value("typography.family", "JetBrainsMono Nerd Font Mono")
++        readonly property int promptSize: root.preferences.value("typography.promptSize", 25)
++        readonly property int inputSize: root.preferences.value("typography.inputSize", 21)
++        readonly property int bodySize: root.preferences.value("typography.bodySize", 16)
++        readonly property int detailSize: root.preferences.value("typography.detailSize", 12)
++        readonly property int emptySize: root.preferences.value("typography.emptySize", 14)
+     }
+ 
+     readonly property var geometry: QtObject {
+@@ -45,19 +47,19 @@ QtObject {
+     }
+ 
+     readonly property var launcher: QtObject {
+-        readonly property int maxWidth: 720
+-        readonly property int screenMargin: 48
+-        readonly property real verticalPosition: 1 / 3
+-        readonly property int searchHeight: 60
+-        readonly property int resultHeight: 62
+-        readonly property int emptyResultHeight: 78
+-        readonly property int footerHeight: 39
+-        readonly property int maxVisibleResults: 7
+-        readonly property int iconSize: 34
+-        readonly property int inputLeftMargin: 54
+-        readonly property int resultTextLeftMargin: 72
+-        readonly property int resultSideMargin: 22
+-        readonly property int resultTextSpacing: 2
++        readonly property int maxWidth: root.preferences.value("launcher.maxWidth", 720)
++        readonly property int screenMargin: root.preferences.value("launcher.screenMargin", 48)
++        readonly property real verticalPosition: root.preferences.value("launcher.verticalPosition", 1 / 3)
++        readonly property int searchHeight: root.preferences.value("launcher.searchHeight", 60)
++        readonly property int resultHeight: root.preferences.value("launcher.resultHeight", 62)
++        readonly property int emptyResultHeight: root.preferences.value("launcher.emptyResultHeight", 78)
++        readonly property int footerHeight: root.preferences.value("launcher.footerHeight", 39)
++        readonly property int maxVisibleResults: root.preferences.value("launcher.maxVisibleResults", 7)
++        readonly property int iconSize: root.preferences.value("launcher.iconSize", 34)
++        readonly property int inputLeftMargin: root.preferences.value("launcher.inputLeftMargin", 54)
++        readonly property int resultTextLeftMargin: root.preferences.value("launcher.resultTextLeftMargin", 72)
++        readonly property int resultSideMargin: root.preferences.value("launcher.resultSideMargin", 22)
++        readonly property int resultTextSpacing: root.preferences.value("launcher.resultTextSpacing", 2)
+     }
+ 
+     readonly property var clipboard: QtObject {
+@@ -78,24 +80,24 @@ QtObject {
+     }
+ 
+     readonly property var inputMethod: QtObject {
+-        readonly property string fontFamily: "Noto Sans CJK TC"
+-        readonly property int fontSize: 20
+-        readonly property int minWidth: 0
+-        readonly property int maxWidth: 480
+-        readonly property int rowHeight: 40
+-        readonly property int maxVisibleRows: 10
+-        readonly property int padding: 12
+-        readonly property int screenMargin: 8
+-        readonly property int cursorGap: 6
+-        readonly property bool horizontal: false
++        readonly property string fontFamily: root.preferences.value("inputMethod.fontFamily", "Noto Sans CJK TC")
++        readonly property int fontSize: root.preferences.value("inputMethod.fontSize", 20)
++        readonly property int minWidth: root.preferences.value("inputMethod.minWidth", 0)
++        readonly property int maxWidth: root.preferences.value("inputMethod.maxWidth", 480)
++        readonly property int rowHeight: root.preferences.value("inputMethod.rowHeight", 40)
++        readonly property int maxVisibleRows: root.preferences.value("inputMethod.maxVisibleRows", 10)
++        readonly property int padding: root.preferences.value("inputMethod.padding", 12)
++        readonly property int screenMargin: root.preferences.value("inputMethod.screenMargin", 8)
++        readonly property int cursorGap: root.preferences.value("inputMethod.cursorGap", 6)
++        readonly property bool horizontal: root.preferences.value("inputMethod.horizontal", false)
+     }
+ 
+     readonly property var sidebar: QtObject {
+-        readonly property int width: 400
+-        readonly property int margin: 24
+-        readonly property int padding: 20
+-        readonly property int gap: 8
+-        readonly property int animationDuration: 220
++        readonly property int width: root.preferences.value("sidebar.width", 400)
++        readonly property int margin: root.preferences.value("sidebar.margin", 24)
++        readonly property int padding: root.preferences.value("sidebar.padding", 20)
++        readonly property int gap: root.preferences.value("sidebar.gap", 8)
++        readonly property int animationDuration: root.preferences.value("sidebar.animationDuration", 220)
+     }
+ 
+     readonly property var dashboard: QtObject {
+@@ -105,59 +107,59 @@ QtObject {
+     }
+ 
+     readonly property var notifications: QtObject {
+-        readonly property int laneWidth: 360
+-        readonly property int cardWidth: 248
+-        readonly property int iconWidth: root.topBar.height
+-        readonly property int stackStep: iconWidth
+-        readonly property int overlap: 12
+-        readonly property int padding: 8
+-        readonly property int gap: 8
+-        readonly property int defaultTimeout: 16000
+-        readonly property int hoverCloseDelay: 180
+-        readonly property int slideDuration: 320
+-        readonly property int expandDuration: 500
+-        readonly property int detailMaxLines: 4
+-        readonly property int detailMaxHeight: 100
+-        readonly property int historyDetailMaxHeight: 160
+-        readonly property int historyExpandDuration: 280
++        readonly property int laneWidth: root.preferences.value("notifications.laneWidth", 360)
++        readonly property int cardWidth: root.preferences.value("notifications.cardWidth", 248)
++        readonly property int iconWidth: root.preferences.value("notifications.iconWidth", root.topBar.height)
++        readonly property int stackStep: root.preferences.value("notifications.stackStep", iconWidth)
++        readonly property int overlap: root.preferences.value("notifications.overlap", 12)
++        readonly property int padding: root.preferences.value("notifications.padding", 8)
++        readonly property int gap: root.preferences.value("notifications.gap", 8)
++        readonly property int defaultTimeout: root.preferences.value("notifications.defaultTimeout", 16000)
++        readonly property int hoverCloseDelay: root.preferences.value("notifications.hoverCloseDelay", 180)
++        readonly property int slideDuration: root.preferences.value("notifications.slideDuration", 320)
++        readonly property int expandDuration: root.preferences.value("notifications.expandDuration", 500)
++        readonly property int detailMaxLines: root.preferences.value("notifications.detailMaxLines", 4)
++        readonly property int detailMaxHeight: root.preferences.value("notifications.detailMaxHeight", 100)
++        readonly property int historyDetailMaxHeight: root.preferences.value("notifications.historyDetailMaxHeight", 160)
++        readonly property int historyExpandDuration: root.preferences.value("notifications.historyExpandDuration", 280)
+     }
+ 
+     readonly property var osd: QtObject {
+-        readonly property int width: root.notifications.cardWidth
+-        readonly property int statusCardHeight: 48
+-        readonly property int statusWidth: 160
+-        readonly property int progressCardHeight: root.topBar.height
+-        readonly property int iconSize: 22
+-        readonly property int progressHeight: 5
+-        readonly property int padding: root.notifications.padding
+-        readonly property int gap: 8
+-        readonly property int transientTimeout: 1400
+-        readonly property int messageTimeout: 1800
+-        readonly property int animationDuration: 180
++        readonly property int width: root.preferences.value("osd.width", root.notifications.cardWidth)
++        readonly property int statusCardHeight: root.preferences.value("osd.statusCardHeight", 48)
++        readonly property int statusWidth: root.preferences.value("osd.statusWidth", 160)
++        readonly property int progressCardHeight: root.preferences.value("osd.progressCardHeight", root.topBar.height)
++        readonly property int iconSize: root.preferences.value("osd.iconSize", 22)
++        readonly property int progressHeight: root.preferences.value("osd.progressHeight", 5)
++        readonly property int padding: root.preferences.value("osd.padding", root.notifications.padding)
++        readonly property int gap: root.preferences.value("osd.gap", 8)
++        readonly property int transientTimeout: root.preferences.value("osd.transientTimeout", 1400)
++        readonly property int messageTimeout: root.preferences.value("osd.messageTimeout", 1800)
++        readonly property int animationDuration: root.preferences.value("osd.animationDuration", 180)
+     }
+ 
+     readonly property var topBar: QtObject {
+-        readonly property int height: 48
+-        readonly property int maxWidth: 2200
+-        readonly property int sideMargin: 24
+-        readonly property int topMargin: 10
+-        readonly property int bottomMargin: 8
+-        readonly property int radius: 5
+-        readonly property int horizontalPadding: 14
+-        readonly property int itemSpacing: 10
+-        readonly property int workspaceSpacing: 2
+-        readonly property int workspaceSize: 34
+-        readonly property real workspaceSelectionOpacity: 0.7
+-        readonly property int iconSize: root.geometry.iconSize
+-        readonly property real iconStrokeWidth: root.geometry.iconStrokeWidth
+-        readonly property int statusHitSize: root.geometry.controlSize
+-        readonly property int dividerWidth: 1
+-        readonly property int dividerHeight: 20
+-        readonly property real workspaceSweepWidth: 0.2
+-        readonly property int workspaceSweepHeight: 2
+-        readonly property int workspaceSweepDuration: 400
+-        readonly property int textSize: root.typography.bodySize
+-        readonly property int clockSize: 17
+-        readonly property int windowHeight: topMargin + height + bottomMargin
++        readonly property int height: root.preferences.value("topBar.height", 48)
++        readonly property int maxWidth: root.preferences.value("topBar.maxWidth", 2200)
++        readonly property int sideMargin: root.preferences.value("topBar.sideMargin", 24)
++        readonly property int topMargin: root.preferences.value("topBar.topMargin", 10)
++        readonly property int bottomMargin: root.preferences.value("topBar.bottomMargin", 8)
++        readonly property int radius: root.preferences.value("topBar.radius", 5)
++        readonly property int horizontalPadding: root.preferences.value("topBar.horizontalPadding", 14)
++        readonly property int itemSpacing: root.preferences.value("topBar.itemSpacing", 10)
++        readonly property int workspaceSpacing: root.preferences.value("topBar.workspaceSpacing", 2)
++        readonly property int workspaceSize: root.preferences.value("topBar.workspaceSize", 34)
++        readonly property real workspaceSelectionOpacity: root.preferences.value("topBar.workspaceSelectionOpacity", 0.7)
++        readonly property int iconSize: root.preferences.value("topBar.iconSize", root.geometry.iconSize)
++        readonly property real iconStrokeWidth: root.preferences.value("topBar.iconStrokeWidth", root.geometry.iconStrokeWidth)
++        readonly property int statusHitSize: root.preferences.value("topBar.statusHitSize", root.geometry.controlSize)
++        readonly property int dividerWidth: root.preferences.value("topBar.dividerWidth", 1)
++        readonly property int dividerHeight: root.preferences.value("topBar.dividerHeight", 20)
++        readonly property real workspaceSweepWidth: root.preferences.value("topBar.workspaceSweepWidth", 0.2)
++        readonly property int workspaceSweepHeight: root.preferences.value("topBar.workspaceSweepHeight", 2)
++        readonly property int workspaceSweepDuration: root.preferences.value("topBar.workspaceSweepDuration", 400)
++        readonly property int textSize: root.preferences.value("topBar.textSize", root.typography.bodySize)
++        readonly property int clockSize: root.preferences.value("topBar.clockSize", 17)
++        readonly property int windowHeight: root.preferences.value("topBar.windowHeight", topMargin + height + bottomMargin)
+     }
+ }
+diff --git a/quickshell/.config/quickshell/TopBar.qml b/quickshell/.config/quickshell/TopBar.qml
+index eda41d6..752689b 100644
+--- a/quickshell/.config/quickshell/TopBar.qml
++++ b/quickshell/.config/quickshell/TopBar.qml
+@@ -242,6 +242,13 @@ Scope {
+                     }
+                     spacing: root.theme.topBar.itemSpacing
+ 
++                    TextButton {
++                        theme: root.theme
++                        text: "設定"
++                        anchors.verticalCenter: parent.verticalCenter
++                        onClicked: Quickshell.execDetached(["settings-center"])
++                    }
++
+                     Clock {
+                         theme: root.theme
+                         clock: root.clock
+diff --git a/quickshell/.config/quickshell/services/AudioService.qml b/quickshell/.config/quickshell/services/AudioService.qml
+index 4973c23..5169e6d 100644
+--- a/quickshell/.config/quickshell/services/AudioService.qml
++++ b/quickshell/.config/quickshell/services/AudioService.qml
+@@ -4,12 +4,15 @@ import Quickshell.Services.Pipewire
+ Scope {
+     id: root
+     readonly property var outputs: Pipewire.nodes.values.filter(node => node.audio !== null && node.isSink && !node.isStream)
++    readonly property var inputs: Pipewire.nodes.values.filter(node => node.audio !== null && !node.isSink && !node.isStream)
++    readonly property var source: Pipewire.defaultAudioSource
++    function selectInput(node) { if (inputs.includes(node)) Pipewire.preferredDefaultAudioSource = node }
+     readonly property var sink: Pipewire.defaultAudioSink
+     readonly property bool available: sink !== null && sink.audio !== null
+     readonly property bool muted: available && sink.audio.muted
+     readonly property real volume: available ? sink.audio.volume : 0
+ 
+-    PwObjectTracker { objects: root.sink !== null ? [root.sink] : [] }
++    PwObjectTracker { objects: [root.sink, root.source].filter(node => node !== null) }
+ 
+     function selectOutput(node) {
+         if (outputs.includes(node)) Pipewire.preferredDefaultAudioSink = node
+diff --git a/quickshell/.config/quickshell/services/ClockService.qml b/quickshell/.config/quickshell/services/ClockService.qml
+index 5ec80e2..e12d27c 100644
+--- a/quickshell/.config/quickshell/services/ClockService.qml
++++ b/quickshell/.config/quickshell/services/ClockService.qml
+@@ -1,8 +1,11 @@
+ import Quickshell
+ 
+ Scope {
++    id: root
++    SettingsPreferences { id: preferences }
++    readonly property string timeFormat: preferences.value("clock.format", "hh:mm")
+     readonly property date displayDate: new Date(clock.date.getTime()
+-        + clock.date.getTimezoneOffset() * 60 * 1000)
++        + (preferences.value("clock.utc", true) ? clock.date.getTimezoneOffset() * 60 * 1000 : 0))
+     readonly property bool daytime: displayDate.getHours() >= 6 && displayDate.getHours() < 18
+ 
+     SystemClock { id: clock; precision: SystemClock.Minutes }
+diff --git a/quickshell/.config/quickshell/services/NotificationService.qml b/quickshell/.config/quickshell/services/NotificationService.qml
+index 3b2005a..cedfd89 100644
+--- a/quickshell/.config/quickshell/services/NotificationService.qml
++++ b/quickshell/.config/quickshell/services/NotificationService.qml
+@@ -10,7 +10,9 @@ Scope {
+     id: root
+ 
+     property int defaultTimeout: 16000
+-    property int historyLimit: 500
++    SettingsPreferences { id: preferences }
++    property bool doNotDisturb: preferences.value("dnd", false)
++    property int historyLimit: preferences.value("historyLimit", 500)
+     property string historyPath: Quickshell.stateDir + "/notification-history.json"
+     property int historySerial: 0
+     property var entries: []
+@@ -102,6 +104,7 @@ Scope {
+         notification.tracked = true
+         const previous = entries.find(entry => entry.notification.id === notification.id)
+         const historyKey = saveNotification(notification, previous)
++        if (doNotDisturb) { notification.dismiss(); return }
+         const timeout = notification.expireTimeout
+         const duration = timeout < 0
+             ? (notification.urgency === NotificationUrgency.Critical ? 0 : defaultTimeout)
+diff --git a/quickshell/.config/quickshell/services/WireGuardService.qml b/quickshell/.config/quickshell/services/WireGuardService.qml
+index f5fb187..1946732 100644
+--- a/quickshell/.config/quickshell/services/WireGuardService.qml
++++ b/quickshell/.config/quickshell/services/WireGuardService.qml
+@@ -5,6 +5,7 @@ import Quickshell.Io
+ Scope {
+     id: root
+ 
++    property string profilesPath: Quickshell.stateDir + "/wireguard-profiles.json"
+     property alias profiles: profileData.profiles
+     property alias selectedProfile: profileData.selectedProfile
+     property bool monitoring: false
+@@ -46,7 +47,9 @@ Scope {
+ 
+     FileView {
+         id: profileFile
+-        path: Quickshell.stateDir + "/wireguard-profiles.json"
++        path: root.profilesPath
++        watchChanges: true
++        onFileChanged: reload()
+         blockLoading: true
+         printErrors: false
+         onAdapterUpdated: writeAdapter()
+diff --git a/quickshell/.config/quickshell/topbar/Clock.qml b/quickshell/.config/quickshell/topbar/Clock.qml
+index 76bf9fb..bf9bc26 100644
+--- a/quickshell/.config/quickshell/topbar/Clock.qml
++++ b/quickshell/.config/quickshell/topbar/Clock.qml
+@@ -39,7 +39,7 @@ Row {
+     MonoText {
+         theme: root.theme
+         anchors.verticalCenter: parent.verticalCenter
+-        text: Qt.formatDateTime(root.clock.displayDate, "hh:mm")
++        text: Qt.formatDateTime(root.clock.displayDate, root.clock.timeFormat)
+         tone: root.theme.colors.textPrimary
+         font.pixelSize: root.theme.topBar.clockSize
+         font.bold: true

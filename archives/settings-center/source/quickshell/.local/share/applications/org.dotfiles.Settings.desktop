@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=設定
+Name[en]=Settings
+GenericName=Settings Center
+Comment=Arch Linux 桌面集中設定中心
+Exec=settings-center
+Icon=preferences-system
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=設定;Settings;螢幕;網路;音訊;藍牙;桌面;
+StartupWMClass=org.dotfiles.Settings

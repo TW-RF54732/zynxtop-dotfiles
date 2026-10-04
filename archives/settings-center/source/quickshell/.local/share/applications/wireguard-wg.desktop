@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=WireGuard
+GenericName=VPN Connection
+Comment=Connect or disconnect the WireGuard interface wg
+Exec=qs ipc call -- wireguard show
+Icon=network-vpn
+Terminal=false
+Categories=Network;
+Keywords=WireGuard;VPN;wg;
+StartupNotify=false
+NoDisplay=false
