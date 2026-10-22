@@ -82,46 +82,54 @@ GlassFrame {
             Layout.fillWidth: true
             Layout.preferredWidth: 280
             Layout.minimumWidth: 200
-            Layout.alignment: Qt.AlignTop
-        }
-        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 400
-            Layout.minimumWidth: 160
-            Layout.maximumWidth: 420
-            Layout.alignment: Qt.AlignTop
-            spacing: 10
-            MediaPanel { theme: root.theme; Layout.fillWidth: true }
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
-            ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
-        }
-        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        ColumnLayout {
-            Layout.preferredWidth: 40
             Layout.fillHeight: true
-            spacing: 8
-            IconButton {
-                theme: root.theme
-                name: "tray"
-                hoverEnabled: true
-                active: root.flyout === "tray"
-                implicitWidth: 40; implicitHeight: 40; iconSize: 18
-                Accessible.name: "Tray"
-                Accessible.role: Accessible.Button
-                onClicked: root.flyoutRequested("tray")
+            // Centered in the blank column so it follows the squeeze when a flyout opens.
+            DashboardOrnament { anchors.fill: parent; theme: root.theme }
+        }
+        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
+        // Mirrors the SYSTEM column's width so the blank column between them stays centered.
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredWidth: 640
+            Layout.minimumWidth: 600
+            Layout.maximumWidth: 640
+            Layout.fillHeight: true
+            spacing: 24
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
+                spacing: 10
+                MediaPanel { theme: root.theme; Layout.fillWidth: true }
+                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
+                ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
             }
-            IconButton {
-                theme: root.theme
-                name: "power"
-                hoverEnabled: true
-                active: root.flyout === "power"
-                implicitWidth: 40; implicitHeight: 40; iconSize: 18
-                Accessible.name: "Power"
-                Accessible.role: Accessible.Button
-                onClicked: root.flyoutRequested("power")
+            Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
+            ColumnLayout {
+                Layout.preferredWidth: 40
+                Layout.fillHeight: true
+                spacing: 8
+                IconButton {
+                    theme: root.theme
+                    name: "tray"
+                    hoverEnabled: true
+                    active: root.flyout === "tray"
+                    implicitWidth: 40; implicitHeight: 40; iconSize: 18
+                    Accessible.name: "Tray"
+                    Accessible.role: Accessible.Button
+                    onClicked: root.flyoutRequested("tray")
+                }
+                IconButton {
+                    theme: root.theme
+                    name: "power"
+                    hoverEnabled: true
+                    active: root.flyout === "power"
+                    implicitWidth: 40; implicitHeight: 40; iconSize: 18
+                    Accessible.name: "Power"
+                    Accessible.role: Accessible.Button
+                    onClicked: root.flyoutRequested("power")
+                }
+                Item { Layout.fillHeight: true }
             }
-            Item { Layout.fillHeight: true }
         }
     }
 }
