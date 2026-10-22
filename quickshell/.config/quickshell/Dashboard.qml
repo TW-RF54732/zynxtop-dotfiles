@@ -93,24 +93,5 @@ GlassFrame {
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
             ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
         }
-        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
-        ColumnLayout {
-            Layout.preferredWidth: 180
-            Layout.minimumWidth: 160
-            Layout.maximumWidth: 200
-            Layout.fillHeight: true
-            spacing: 10
-            Flickable {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                contentWidth: width
-                contentHeight: tray.implicitHeight
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                TrayPanel { id: tray; theme: root.theme; width: parent.width }
-            }
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
-            PowerPanel { theme: root.theme; systemStatus: root.systemStatus; Layout.fillWidth: true }
-        }
     }
 }

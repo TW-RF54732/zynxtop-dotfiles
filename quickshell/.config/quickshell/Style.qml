@@ -104,6 +104,10 @@ QtObject {
         readonly property int animationDuration: 260
     }
 
+    readonly property var powerMenu: QtObject {
+        readonly property int width: 220
+    }
+
     readonly property var notifications: QtObject {
         readonly property int laneWidth: 360
         readonly property int cardWidth: 248
@@ -158,6 +162,8 @@ QtObject {
         readonly property int workspaceSweepDuration: 400
         readonly property int textSize: root.typography.bodySize
         readonly property int clockSize: 17
+        readonly property int trayIconSize: 18
+        readonly property int traySpacing: 2
         readonly property int windowHeight: topMargin + height + bottomMargin
     }
 }

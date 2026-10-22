@@ -21,6 +21,7 @@ Scope {
     required property OsdService osd
     required property ClockService clock
     required property NotificationService notifications
+    property var powerMenu: null
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
     SystemStatusService { id: systemStatus; enabled: root.dashboardOpen }
 
@@ -242,6 +243,11 @@ Scope {
                     }
                     spacing: root.theme.topBar.itemSpacing
 
+                    Tray {
+                        theme: root.theme
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
                     Clock {
                         theme: root.theme
                         clock: root.clock
@@ -262,6 +268,19 @@ Scope {
                         active: root.dashboardOpen
                         anchors.verticalCenter: parent.verticalCenter
                         onToggled: root.dashboardOpen = !root.dashboardOpen
+                    }
+
+                    IconButton {
+                        theme: root.theme
+                        name: "power"
+                        implicitWidth: root.theme.topBar.statusHitSize
+                        implicitHeight: root.theme.topBar.height
+                        iconSize: root.theme.topBar.iconSize
+                        lineWidth: root.theme.topBar.iconStrokeWidth
+                        hoverEnabled: true
+                        active: root.powerMenu ? root.powerMenu.shown : false
+                        anchors.verticalCenter: parent.verticalCenter
+                        onClicked: if (root.powerMenu) root.powerMenu.toggle()
                     }
                 }
             }
