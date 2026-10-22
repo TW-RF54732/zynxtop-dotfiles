@@ -8,6 +8,8 @@ import "topbar"
 import "components"
 import "services"
 import "notifications"
+import "dashboard"
+import "services/powerEntries.js" as PowerEntries
 
 Scope {
     id: root
@@ -22,6 +24,16 @@ Scope {
     required property ClockService clock
     required property NotificationService notifications
     property var powerMenu: null
+    // Card split off the Dashboard's right side: "", "tray" or "power".
+    property string flyout: ""
+    onDashboardOpenChanged: if (!dashboardOpen) flyout = ""
+    function toggleFlyout(name) { flyout = flyout === name ? "" : name }
+    function runPower(entry) {
+        dashboardOpen = false
+        if (entry.confirm) {
+            if (powerMenu) powerMenu.showConfirm(entry.key)
+        } else systemStatus.act(entry.key)
+    }
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
     SystemStatusService { id: systemStatus; enabled: root.dashboardOpen }
 
@@ -129,9 +141,23 @@ Scope {
                     systemStats: systemStats
                     audio: root.audio
                     network: root.network
-                    width: parent.width
+                    flyout: root.flyout
+                    onFlyoutRequested: name => root.toggleFlyout(name)
+                    width: parent.width - dashboardFlyout.space
                     height: barWindow.dashboardHeight
                     y: barWindow.dashboardReveal - height
+                }
+
+                // Splits off the Dashboard's right side as a separate floating card.
+                DashboardFlyout {
+                    id: dashboardFlyout
+                    theme: root.theme
+                    kind: root.flyout
+                    powerItems: PowerEntries.build(systemStatus.status.capabilities || ({}), systemStatus.busy)
+                    maximumHeight: barWindow.dashboardHeight
+                    x: parent.width - width * reveal
+                    y: barWindow.dashboardReveal - barWindow.dashboardHeight
+                    onPowerTriggered: entry => root.runPower(entry)
                 }
             }
 
@@ -243,11 +269,6 @@ Scope {
                     }
                     spacing: root.theme.topBar.itemSpacing
 
-                    Tray {
-                        theme: root.theme
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
                     Clock {
                         theme: root.theme
                         clock: root.clock
@@ -268,19 +289,6 @@ Scope {
                         active: root.dashboardOpen
                         anchors.verticalCenter: parent.verticalCenter
                         onToggled: root.dashboardOpen = !root.dashboardOpen
-                    }
-
-                    IconButton {
-                        theme: root.theme
-                        name: "power"
-                        implicitWidth: root.theme.topBar.statusHitSize
-                        implicitHeight: root.theme.topBar.height
-                        iconSize: root.theme.topBar.iconSize
-                        lineWidth: root.theme.topBar.iconStrokeWidth
-                        hoverEnabled: true
-                        active: root.powerMenu ? root.powerMenu.shown : false
-                        anchors.verticalCenter: parent.verticalCenter
-                        onClicked: if (root.powerMenu) root.powerMenu.toggle()
                     }
                 }
             }

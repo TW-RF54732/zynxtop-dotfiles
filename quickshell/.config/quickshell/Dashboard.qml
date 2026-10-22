@@ -10,6 +10,9 @@ GlassFrame {
     required property SystemStatsService systemStats
     required property AudioService audio
     required property NetworkService network
+    // Which flyout the host currently shows beside the Dashboard: "", "tray" or "power".
+    property string flyout: ""
+    signal flyoutRequested(string name)
     function diskCapacity() {
         const stats = systemStats.stats
         return stats.diskTotal ? Math.round(stats.diskUsed / 1073741824) + "/"
@@ -92,6 +95,33 @@ GlassFrame {
             MediaPanel { theme: root.theme; Layout.fillWidth: true }
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.theme.colors.separator }
             ControlsPanel { theme: root.theme; audio: root.audio; Layout.fillWidth: true }
+        }
+        Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: root.theme.colors.separator }
+        ColumnLayout {
+            Layout.preferredWidth: 40
+            Layout.fillHeight: true
+            spacing: 8
+            IconButton {
+                theme: root.theme
+                name: "tray"
+                hoverEnabled: true
+                active: root.flyout === "tray"
+                implicitWidth: 40; implicitHeight: 40; iconSize: 18
+                Accessible.name: "Tray"
+                Accessible.role: Accessible.Button
+                onClicked: root.flyoutRequested("tray")
+            }
+            IconButton {
+                theme: root.theme
+                name: "power"
+                hoverEnabled: true
+                active: root.flyout === "power"
+                implicitWidth: 40; implicitHeight: 40; iconSize: 18
+                Accessible.name: "Power"
+                Accessible.role: Accessible.Button
+                onClicked: root.flyoutRequested("power")
+            }
+            Item { Layout.fillHeight: true }
         }
     }
 }

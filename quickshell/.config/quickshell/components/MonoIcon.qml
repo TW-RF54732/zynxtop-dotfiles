@@ -132,6 +132,12 @@ Item {
                 context.moveTo(width * 0.5, height * 0.12)
                 context.lineTo(width * 0.5, height * 0.5)
                 context.stroke()
+            } else if (root.name === "tray") {
+                for (let i = 0; i < 4; ++i) {
+                    const x = width * (i % 2 ? 0.54 : 0.14)
+                    const y = height * (i < 2 ? 0.14 : 0.54)
+                    context.strokeRect(x, y, width * 0.32, height * 0.32)
+                }
             } else if (root.name === "reboot") {
                 context.beginPath()
                 context.arc(width * 0.5, height * 0.5, width * 0.32, -Math.PI * 0.25, Math.PI * 1.5)

@@ -101,6 +101,9 @@ QtObject {
     readonly property var dashboard: QtObject {
         readonly property int height: 300
         readonly property int gap: 8
+        readonly property int trayIconSize: 18
+        readonly property int flyoutPadding: 8
+        readonly property int flyoutDuration: 200
         readonly property int animationDuration: 260
     }
 
@@ -162,8 +165,6 @@ QtObject {
         readonly property int workspaceSweepDuration: 400
         readonly property int textSize: root.typography.bodySize
         readonly property int clockSize: 17
-        readonly property int trayIconSize: 18
-        readonly property int traySpacing: 2
         readonly property int windowHeight: topMargin + height + bottomMargin
     }
 }

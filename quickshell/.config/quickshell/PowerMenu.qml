@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import "components"
 import "services"
+import "services/powerEntries.js" as PowerEntries
 
 Scope {
     id: root
@@ -25,19 +26,17 @@ Scope {
         return Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
     }
     readonly property var capabilities: systemStatus.status.capabilities || ({})
-    readonly property var entries: [
-        {key: "lock", icon: "lock", text: "Lock"},
-        {key: "suspend", icon: "moon", text: "Sleep"},
-        {key: "hibernate", icon: "hibernate", text: "Hibernate"},
-        {key: "reboot", icon: "reboot", text: "Reboot", confirm: true},
-        {key: "poweroff", icon: "power", text: "Power off", confirm: true}
-    ].map(entry => Object.assign({enabled: !systemStatus.busy && !!capabilities[entry.key]}, entry))
+    readonly property var entries: PowerEntries.build(capabilities, systemStatus.busy)
 
     function show() {
         pendingAction = ""
         shown = true
         window.visible = true
         Qt.callLater(() => menu.forceActiveFocus())
+    }
+    function showConfirm(action) {
+        show()
+        pendingAction = action
     }
     function hide() {
         shown = false
@@ -80,10 +79,8 @@ Scope {
 
         Item {
             id: placement
-            readonly property real barRight: window.width
-                - Math.max(root.theme.topBar.sideMargin, (window.width - root.theme.topBar.maxWidth) / 2)
-            x: barRight - width
-            y: root.theme.topBar.topMargin + root.theme.topBar.height + root.theme.dashboard.gap
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
             width: root.theme.powerMenu.width
             height: root.pendingAction === "" ? menu.implicitHeight : confirm.implicitHeight
 
