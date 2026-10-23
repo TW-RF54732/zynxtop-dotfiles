@@ -43,10 +43,8 @@ ShellRoot {
         compositor: compositorService
     }
     WireGuardWindow { theme: sharedTheme; wireguard: wireGuardService }
-    PowerMenu { id: powerMenu; theme: sharedTheme; compositor: compositorService }
     TopBar {
         theme: sharedTheme
-        powerMenu: powerMenu
         compositor: compositorService
         audio: audioService
         network: networkService

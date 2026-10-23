@@ -29,7 +29,7 @@ Launcher 與 Top Bar 共用 Kitty `#111318` 基底及 Kitty 原生灰階，配�
 | `Super + W` | 展開／收合 Dashboard，已設定於 Hyprland 快捷鍵 |
 | `Super + V` | 在文字游標旁開啟剪貼簿歷史 |
 
-Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，重啟和關機需在面板內確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料、月曆與通知中心由右側個人側欄承載。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
+Dashboard 從螢幕上方下拉，將 Top Bar 往下推；收合時 Top Bar 回到原位。面板與 Top Bar 同寬，共用玻璃樣式，所有螢幕同步開關，展開部分覆蓋在其他視窗上方，不改變視窗大小或位置。Dashboard 用於顯示電腦與作業系統目前的活動與狀態，系統資訊位於面板上方，區域寬度上限為 640px。左側顯示 CPU 頻率、溫度、執行緒數，RAM 與 swap 容量、GPU 溫度與顯存；右側以三層同心半圓顯示 CPU、RAM、GPU 使用率。下方顯示 SSD 使用進度、百分比與容量，以及網路連線狀態。無法取得的數據顯示「—」。Dashboard 為四欄：`SYSTEM | OS | MEDIA/AUDIO | TRAY/POWER`，高度維持 300px。OS 欄目前留空；媒體與音訊上下排列，系統匣與電源上下排列。電源提供鎖定（hyprlock）、睡眠、休眠、重啟與關機；依 logind 支援及授權狀態啟用，所有選項點擊後直接執行，不需確認。通知中心已移出 Dashboard，模組仍保留。使用者個人資料、月曆與通知中心由右側個人側欄承載。高度、間距與動畫時間可在 `Style.qml` 的 `dashboard` 區塊調整。
 
 IPC 介面：
 

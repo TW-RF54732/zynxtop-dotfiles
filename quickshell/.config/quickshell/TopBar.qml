@@ -23,16 +23,13 @@ Scope {
     required property OsdService osd
     required property ClockService clock
     required property NotificationService notifications
-    property var powerMenu: null
     // Card split off the Dashboard's right side: "", "tray" or "power".
     property string flyout: ""
     onDashboardOpenChanged: if (!dashboardOpen) flyout = ""
     function toggleFlyout(name) { flyout = flyout === name ? "" : name }
     function runPower(entry) {
         dashboardOpen = false
-        if (entry.confirm) {
-            if (powerMenu) powerMenu.showConfirm(entry.key)
-        } else systemStatus.act(entry.key)
+        systemStatus.act(entry.key)
     }
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
     SystemStatusService { id: systemStatus; enabled: root.dashboardOpen }
