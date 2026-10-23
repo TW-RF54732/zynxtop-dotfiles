@@ -40,6 +40,9 @@ Scope {
         delegate: PanelWindow {
             id: window
             required property var modelData
+            // Position from the screen size, not window.width: the layer surface reports
+            // 0 (or a stale size) while unmapped, which made x animate in from the left.
+            readonly property real layoutWidth: modelData.width
             readonly property bool isTarget: screen === controller.targetScreen
             objectName: isTarget ? "sidebarWindow" : "sidebarBackdrop"
             screen: modelData
@@ -70,10 +73,10 @@ Scope {
                 objectName: "sidebarPanel"
                 theme: root.theme
                 visible: window.isTarget
-                width: Math.max(0, Math.min(root.theme.sidebar.width, window.width - root.theme.sidebar.margin * 2))
+                width: Math.max(0, Math.min(root.theme.sidebar.width, window.layoutWidth - root.theme.sidebar.margin * 2))
                 height: Math.max(0, window.height - y - root.theme.sidebar.margin)
                 y: root.theme.topBar.windowHeight + root.theme.sidebar.gap
-                x: lifecycle.shown ? window.width - width - root.theme.sidebar.margin : window.width
+                x: lifecycle.shown ? window.layoutWidth - width - root.theme.sidebar.margin : window.layoutWidth
                 color: root.theme.colors.topBarSurface
                 border.width: root.theme.topBar.dividerWidth
                 border.color: root.theme.colors.separator
