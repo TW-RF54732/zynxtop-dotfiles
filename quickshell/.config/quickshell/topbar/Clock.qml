@@ -31,7 +31,7 @@ Row {
         anchors.verticalCenter: parent.verticalCenter
         width: root.theme.topBar.iconSize
         height: width
-        name: root.clock.daytime ? "sun" : "moon"
+        name: root.clock.daytime ? "half-top" : "half-bottom"
         color: root.theme.colors.textSecondary
         lineWidth: root.theme.topBar.iconStrokeWidth
     }
@@ -39,7 +39,7 @@ Row {
     MonoText {
         theme: root.theme
         anchors.verticalCenter: parent.verticalCenter
-        text: Qt.formatDateTime(root.clock.displayDate, "hh:mm")
+        text: root.clock.timeText
         tone: root.theme.colors.textPrimary
         font.pixelSize: root.theme.topBar.clockSize
         font.bold: true

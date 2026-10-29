@@ -176,6 +176,19 @@ Item {
                                    centerY + Math.sin(angle) * rayEnd)
                     context.stroke()
                 }
+            } else if (root.name === "half-top" || root.name === "half-bottom") {
+                const cx = width / 2
+                const cy = height / 2
+                const r = Math.min(width, height) * 0.36
+                const top = root.name === "half-top"
+
+                context.beginPath()
+                context.arc(cx, cy, r, 0, Math.PI * 2)
+                context.stroke()
+                context.beginPath()
+                context.arc(cx, cy, r, top ? Math.PI : 0, top ? Math.PI * 2 : Math.PI)
+                context.closePath()
+                context.fill()
             } else if (root.name === "moon") {
                 const cx = width * 0.50
                 const cy = height * 0.50
