@@ -69,9 +69,8 @@ Scope {
             const name = String(source[i])
             if (validProfile(name) && unique.indexOf(name) < 0) unique.push(name)
         }
-        if (unique.indexOf("wg") < 0) unique.unshift("wg")
         profiles = unique
-        if (unique.indexOf(selectedProfile) < 0) selectedProfile = unique[0]
+        if (unique.indexOf(selectedProfile) < 0) selectedProfile = unique[0] || ""
     }
 
     function unitName(profile) {
