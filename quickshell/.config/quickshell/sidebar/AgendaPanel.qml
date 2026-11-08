@@ -16,11 +16,15 @@ ColumnLayout {
     property var events: []
     property string selectedKey: ""
     property string status: ""
+    property var ghost: null
     signal eventActivated(var event)
     signal addRequested()
+    signal slotRequested(int minute)
+    signal weekRequested()
     spacing: 8
 
     function scrollToFocus() { timeline.scrollToFocus(); }
+    function revealRange(startMin, endMin) { timeline.revealRange(startMin, endMin); }
 
     RowLayout {
         Layout.fillWidth: true
@@ -41,6 +45,15 @@ ColumnLayout {
             text: root.status
             font.pixelSize: 11
             tone: root.theme.colors.textMuted
+        }
+        TextButton {
+            objectName: "agendaWeekButton"
+            theme: root.theme
+            text: "週"
+            implicitHeight: 26
+            implicitWidth: 26
+            Accessible.name: "開啟週視圖"
+            onClicked: root.weekRequested()
         }
         TextButton {
             objectName: "agendaAddButton"
@@ -75,10 +88,12 @@ ColumnLayout {
             selectedKey: root.selectedKey
             showNow: root.isToday
             nowMinute: root.nowMinute
+            ghost: root.ghost
             Layout.preferredWidth: 1
             Layout.fillWidth: true
             Layout.fillHeight: true
             onEventActivated: event => root.eventActivated(event)
+            onSlotRequested: minute => root.slotRequested(minute)
         }
     }
 }

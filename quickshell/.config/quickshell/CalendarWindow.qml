@@ -27,6 +27,7 @@ FloatingWindow {
     property rect anchorRect: Qt.rect(0, 0, 0, 0)
     property var pendingAnchor: null
     property string pendingDate: ""
+    property bool loadingEvent: false
     // Subscription card: "" closed, "add", or a subscription id.
     property string subscriptionCard: ""
     property real subscriptionY: 0
@@ -88,6 +89,11 @@ FloatingWindow {
         Qt.callLater(() => editor.focusTitle());
     }
     // From the Sidebar: `dateKey` is the occurrence to show (a series loads its first date).
+    // From the Sidebar's week button: open on the week containing `dateKey`.
+    function showDate(dateKey) {
+        present();
+        goToDate(dateKey || todayKey);
+    }
     function openEvent(uid, dateKey) {
         present();
         subscriptionCard = "";
@@ -95,7 +101,8 @@ FloatingWindow {
         pendingDate = dateKey || "";
         if (dateKey) goToDate(dateKey);
         formError = "";
-        calendar.load(uid);
+        loadingEvent = true;
+        calendar.load(uid, "window");
     }
     function activateEvent(event, rect) {
         subscriptionCard = "";
@@ -108,7 +115,8 @@ FloatingWindow {
         formOpen = false;
         pendingAnchor = rect;
         pendingDate = event.date;
-        calendar.load(event.uid);
+        loadingEvent = true;
+        calendar.load(event.uid, "window");
     }
     function fillForm(event) {
         editor.fill(event);
@@ -124,6 +132,7 @@ FloatingWindow {
         saving = false;
         selectedKey = "";
         pendingAnchor = null;
+        loadingEvent = false;
     }
     function submitForm() {
         if (editor.readOnly) return;
@@ -151,8 +160,9 @@ FloatingWindow {
 
     Connections {
         target: root.calendar
-        function onEventLoaded(event) {
-            if (!root.visible) return;
+        function onEventLoaded(event, requester) {
+            if (requester !== "window" || !root.loadingEvent || !root.visible) return;
+            root.loadingEvent = false;
             root.fillForm(event);
             if (root.pendingAnchor) {
                 root.anchorRect = root.pendingAnchor;
@@ -164,12 +174,13 @@ FloatingWindow {
             }
             root.pendingAnchor = null;
         }
-        function onSaved(op, uid) { if (root.visible) root.closeForm(); }
+        // The Sidebar flyout saves through the same service; only react to our own requests.
+        function onSaved(op, uid) { if (root.saving) root.closeForm(); }
         function onFailed(op, message) {
-            if (["create", "update", "delete", "get"].includes(op)) {
-                root.saving = false;
-                root.formError = message;
-            }
+            if (!root.saving && !(op === "get" && root.loadingEvent)) return;
+            root.saving = false;
+            root.loadingEvent = false;
+            root.formError = message;
         }
         function onSubscribed(id) { root.subscriptionCard = id; }
     }
@@ -180,6 +191,7 @@ FloatingWindow {
         function hide(): void { root.dismiss(); }
         function toggle(): void { root.toggleVisibility(); }
         function newEvent(date: string): void { root.newEvent(date); }
+        function showDate(date: string): void { root.showDate(date); }
         function sync(): void { root.calendar.sync(); }
     }
 

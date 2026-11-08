@@ -13,7 +13,7 @@ Rectangle {
     implicitWidth: label.implicitWidth + (primary ? 28 : 16)
     implicitHeight: 30
     radius: theme.app.eventRadius
-    color: primary ? (hovered ? theme.colors.textPrimary : theme.colors.textSecondary)
+    color: primary ? (hovered ? theme.app.primaryHover : theme.app.primaryFill)
         : (hovered ? theme.app.hover : "transparent")
     opacity: interactive ? 1 : 0.4
 
@@ -25,7 +25,7 @@ Rectangle {
         anchors.centerIn: parent
         text: root.text
         font.bold: root.primary
-        color: root.primary ? root.theme.app.surface
+        color: root.primary ? root.theme.app.primaryText
             : (root.hovered ? root.theme.colors.textPrimary : root.theme.colors.textSecondary)
     }
     MouseArea {

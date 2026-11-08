@@ -337,7 +337,7 @@ qs ipc call -- sidebar hide
 
 月曆與通知之間是固定高度（`Style.sidebar.agendaHeight`，預設 260px）的日程區，左右對半：左側條列選取日的事項（全天在前，依時間排序），右側為可捲動的 24 小時時間軸，重疊事項並排分欄、全天事項置頂；選取今天時顯示現在時間指針，開啟時捲到指針附近，其他日子捲到第一個事項。點擊左側條列會把該事項在時間軸上平滑捲至中央（到頂或底時停在邊界）。
 
-點擊條列或時間軸上的事項，會在側欄左側彈出詳情卡片（樣式同 Dashboard flyout）：標題、時間、日曆、地點、備註；本機事項另有「編輯」（在週視圖視窗開啟該事項）與「刪除」（直接執行，不需確認）。再點一次同一事項、點側欄其他處、切換日期或 `Esc` 關閉卡片。日程標題列的 `+` 會以選取日開啟新增表單。
+點擊條列或時間軸上的事項，會在側欄左側彈出事項卡片（樣式同 Dashboard flyout），直接在卡片裡檢視和編輯：卡片用的是週視圖視窗的句子表單（`calendar/EventEditor.qml`），換上 shell 外觀（`Style.shellForms`：等寬字、無卡片底色、單色）。本機事項可改標題、日期、時間、全天、重複、地點、備註，`Enter` 或「儲存」寫入，「刪除」直接執行不確認；訂閱事項唯讀。點時間軸空白處以該半點建立一小時的新事項，時間軸上同步顯示虛線預覽；日程標題列的 `+` 也會開新事項卡（今天從下一個整點開始，其他日子 09:00），`週` 按鈕關閉側欄並開啟該日所在週的週視圖視窗。卡片開著時點時間軸空白處、點側欄其他處、切換日期或 `Esc` 會關閉卡片（`Esc` 先離開時間輸入或日期選單），未儲存的修改不保留。
 
 後端使用成熟工具，UI 自行繪製：
 
@@ -361,10 +361,11 @@ sudo pacman -S vdirsyncer python-icalendar python-recurring-ical-events python-x
 ```sh
 qs ipc call calendar toggle
 qs ipc call calendar newEvent 2026-11-08
+qs ipc call calendar showDate 2026-11-08
 qs ipc call calendar sync
 ```
 
-驗證：`bash tests/run-calendar.sh` 以暫存資料夾驅動真實後端（CRUD、RRULE/EXDATE、時區、跨日、以本機 HTTP 伺服器模擬 vdirsyncer 訂閱），並測試 `CalendarService` 與週視圖視窗的表單。
+驗證：`bash tests/run-calendar.sh` 以暫存資料夾驅動真實後端（CRUD、RRULE/EXDATE、時區、跨日、以本機 HTTP 伺服器模擬 vdirsyncer 訂閱），並測試 `CalendarService` 與週視圖視窗的表單；側欄事項卡的編輯流程在 `bash tests/run-sidebar.sh`。
 
 未來小工具透過 `Sidebar.widgets` 的 `list<Component>` 加入，排列於月曆之後、日程之前。各小工具用 `implicitHeight` 宣告高度，寬度由容器提供；主題與所需服務由 Component 明確注入。例如：
 

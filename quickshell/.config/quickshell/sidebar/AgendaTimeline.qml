@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../components"
+import "../calendar"
 import "Calendar.js" as Calendar
 
 // Right half of the agenda: a scrollable 24-hour day column with a now pointer.
@@ -12,12 +13,16 @@ Item {
     property string selectedKey: ""
     property bool showNow: false
     property int nowMinute: 0
+    // Pending new event drawn dashed: {startMin, endMin, allDay, title}; null for none.
+    property var ghost: null
     readonly property int hourHeight: theme.sidebar.hourHeight
     readonly property int labelWidth: 28
     readonly property var allDay: Calendar.sortEvents(events).filter(event => event.allDay)
     readonly property var blocks: Calendar.layoutDay(events)
     readonly property alias nowPointer: pointer
     signal eventActivated(var event)
+    // Click on empty time: the half hour under the pointer.
+    signal slotRequested(int minute)
 
     function minuteY(minute) { return minute / 60 * hourHeight; }
     // Today: keep the pointer in the upper third. Other days: first timed event, else 08:00.
@@ -34,6 +39,13 @@ Item {
         if (!item) return;
         const middle = minuteY((item.start + item.end) / 2) + 4;
         scrollTo(middle - flick.height / 2, true);
+    }
+    // Scrolls just enough to show [startMin, endMin].
+    function revealRange(startMin, endMin) {
+        const top = minuteY(startMin) - 8;
+        const bottom = minuteY(endMin) + 16;
+        if (top < flick.contentY) scrollTo(top, true);
+        else if (bottom > flick.contentY + flick.height) scrollTo(Math.min(top, bottom - flick.height), true);
     }
     function scrollTo(target, animated) {
         const bounded = Math.max(0, Math.min(flick.contentHeight - flick.height, target));
@@ -132,6 +144,15 @@ Item {
                 }
             }
 
+            MouseArea {
+                objectName: "agendaTimelineSlot"
+                x: root.labelWidth
+                width: parent.width - root.labelWidth
+                height: parent.height
+                cursorShape: Qt.PointingHandCursor
+                onClicked: mouse => root.slotRequested(Math.min(23 * 60, Math.floor(mouse.y / root.hourHeight * 2) * 30))
+            }
+
             Repeater {
                 model: root.blocks
                 Rectangle {
@@ -164,6 +185,31 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.eventActivated(block.event)
                     }
+                }
+            }
+
+            Item {
+                objectName: "agendaTimelineGhost"
+                visible: root.ghost !== null && !root.ghost.allDay
+                x: root.labelWidth + 4
+                y: root.ghost ? root.minuteY(root.ghost.startMin) + 1 : 0
+                width: parent.width - root.labelWidth - 6
+                height: root.ghost ? Math.max(14, root.minuteY(root.ghost.endMin - root.ghost.startMin) - 2) : 0
+                z: 1
+                DashedBox {
+                    anchors.fill: parent
+                    stroke: root.theme.colors.textPrimary
+                    radius: root.theme.geometry.cornerRadius
+                }
+                MonoText {
+                    theme: root.theme
+                    x: 5; y: 2
+                    width: parent.width - 8
+                    text: root.ghost && root.ghost.title ? root.ghost.title : "新事項"
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    font.pixelSize: 11
+                    tone: root.theme.colors.textPrimary
                 }
             }
 

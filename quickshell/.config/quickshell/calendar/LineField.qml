@@ -53,7 +53,8 @@ Item {
         anchors.bottom: parent.bottom
         width: parent.width
         height: 1
-        color: input.activeFocus ? root.theme.colors.textSecondary
+        color: input.readOnly ? "transparent"
+            : input.activeFocus ? root.theme.colors.textSecondary
             : hover.hovered ? root.theme.colors.textMuted
             : root.alwaysUnderline ? root.theme.app.raisedBorder : "transparent"
     }

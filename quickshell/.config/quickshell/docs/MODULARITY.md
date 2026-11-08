@@ -105,12 +105,12 @@ Wayland 實機仍需確認焦點、點擊外部關閉、動畫、長清單捲動
 
 ## 右側個人側欄
 
-- `Sidebar` 接收 `theme`、`compositor`、`user`、`clock`、`notifications`、可選的 `calendar`（CalendarService）與 `widgets: list<Component>`；發出 `addEventRequested(dateKey)`、`editEventRequested(event)`，由 `shell.qml` 轉給 `CalendarWindow`（`newEvent(dateKey)`、`openEvent(uid, dateKey)`）；公開 `show()`、`hide()`、`toggle()`，IPC target 為 `sidebar`。視窗與透明外部點擊區使用 overlay layer，僅目標螢幕取得鍵盤焦點。
+- `Sidebar` 接收 `theme`、`compositor`、`user`、`clock`、`notifications`、可選的 `calendar`（CalendarService）與 `widgets: list<Component>`；事項在側欄的 `EventFlyout` 裡就地檢視與編輯（直接呼叫 CalendarService；`load(uid, "sidebar")` 的回覆以 requester 區分，不會被週視圖視窗接走）；只發出 `weekRequested(dateKey)`，由 `shell.qml` 轉給 `CalendarWindow.showDate()`；公開 `show()`、`hide()`、`toggle()`，IPC target 為 `sidebar`。視窗與透明外部點擊區使用 overlay layer，僅目標螢幕取得鍵盤焦點。
 - `SidebarController` 接收螢幕清單與焦點螢幕名稱，固定每次展開的目標，螢幕移除時收合。`AnimatedVisibility` 管理動畫結束後的視窗卸載。
 - `sidebar/` 組裝個人卡、月曆、日程（`AgendaPanel` = `AgendaList` | `AgendaTimeline`）、事項詳情卡片 `EventFlyout` 及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
 - `UserService` 暴露 `displayName`、`avatar`，以一次性 Python 程序讀取目前帳號及本地頭像；`CompositorService.focusedMonitor` 暴露目前焦點螢幕。
 - `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。`Calendar.layoutDay()` 是時間軸重疊分欄的純函式；週、日期鍵、重複規則文字與來源色（`sourceColor`）也在 `Calendar.js`。
-- `calendar/` 是週視圖視窗的功能元件（app 層外觀，見 CLAUDE.md）：`WeekGrid`（週格與拖曳建立，發出 `eventActivated(event, rect)`、`slotRequested(date, start, end, allDay, rect)`）、`EventEditor`（句子表單，`fill(event)`／`collect()`）、`SubscriptionCard`、`SourceList`、`MiniMonth`，以及 `UiText`、`LineField`、`Token`、`TimeToken`、`AppButton`、`EventBlock`、`DashedBox` 小元件。
+- `calendar/` 是週視圖視窗的功能元件（app 層外觀，見 CLAUDE.md）：`WeekGrid`（週格與拖曳建立，發出 `eventActivated(event, rect)`、`slotRequested(date, start, end, allDay, rect)`）、`EventEditor`（句子表單，`fill(event)`／`collect()`；側欄用 `Style.shellForms` 這個主題變體套上 shell 外觀）、`SubscriptionCard`、`SourceList`、`MiniMonth`，以及 `UiText`、`LineField`、`Token`、`TimeToken`、`AppButton`、`EventBlock`、`DashedBox` 小元件。
 - `CalendarService`（`JsonProcessService`）連接常駐的 `services/calendar_backend.py`（JSON lines：`range`、`get`、`create`、`update`、`delete`、`subscriptions`、`subscribe`、`unsubscribe`、`sync`），暴露 `eventsByDay`、`markedDays`、`weekEvents`（`setWeek(monday)`，所有日曆）、`calendars`、`subscriptions`、`syncing`、`available`。後端輸出的時間已換算為台北牆上時間（日期字串 + 分鐘數），QML 不做時區運算。
 
 

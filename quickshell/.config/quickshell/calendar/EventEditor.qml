@@ -85,7 +85,7 @@ Rectangle {
     radius: theme.app.cardRadius
     color: theme.app.raised
     border.width: 1
-    border.color: theme.app.raisedBorder
+    border.color: theme.app.cardBorder
 
     // Clicks inside the card stay in the card.
     MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }
@@ -112,7 +112,7 @@ Rectangle {
             width: parent.width
             readOnly: root.readOnly
             placeholder: "新事項"
-            pixelSize: 19
+            pixelSize: root.theme.app.titleSize
             bold: true
             alwaysUnderline: !root.readOnly
             onAccepted: root.saveRequested()

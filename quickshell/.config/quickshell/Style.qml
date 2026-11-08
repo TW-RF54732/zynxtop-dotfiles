@@ -88,11 +88,45 @@ QtObject {
         readonly property color line: "#23262D"
         readonly property color hover: "#12FFFFFF"
         readonly property color todayTint: "#06FFFFFF"
+        readonly property color cardBorder: "#30343D"
+        readonly property color primaryFill: root.colors.textSecondary
+        readonly property color primaryHover: root.colors.textPrimary
+        readonly property color primaryText: "#17191E"
         readonly property int contentRadius: 10
         readonly property int cardRadius: 10
         readonly property int eventRadius: 6
+        readonly property int titleSize: 19
         // Low-saturation calendar source tints; the local calendar always takes the first.
         readonly property var sourceColors: ["#8FA7CC", "#C9AD88", "#95B690", "#B79AC0", "#8DB5B3", "#C4969B"]
+    }
+
+    // Theme variant that dresses the calendar/ form components in the shell look, for the
+    // Sidebar's event flyout: mono face, no card fill or border, monochrome sources.
+    readonly property var shellForms: QtObject {
+        readonly property var colors: root.colors
+        readonly property var typography: root.typography
+        readonly property var geometry: root.geometry
+        readonly property var motion: root.motion
+        readonly property var calendarWindow: root.calendarWindow
+        readonly property var app: QtObject {
+            readonly property string uiFamily: root.typography.family
+            readonly property color glass: "transparent"
+            readonly property color surface: "#111318"
+            readonly property color raised: "transparent"
+            readonly property color raisedBorder: root.colors.separator
+            readonly property color line: root.colors.separator
+            readonly property color hover: root.colors.frame
+            readonly property color todayTint: "transparent"
+            readonly property color cardBorder: "transparent"
+            readonly property color primaryFill: root.colors.frame
+            readonly property color primaryHover: root.colors.frame
+            readonly property color primaryText: root.colors.textPrimary
+            readonly property int contentRadius: root.geometry.cornerRadius
+            readonly property int cardRadius: root.geometry.cornerRadius
+            readonly property int eventRadius: root.geometry.cornerRadius
+            readonly property int titleSize: 16
+            readonly property var sourceColors: [root.colors.textSecondary]
+        }
     }
 
     readonly property var calendarWindow: QtObject {
@@ -129,8 +163,7 @@ QtObject {
         readonly property int agendaHeight: 260
         readonly property int agendaRowHeight: 40
         readonly property int hourHeight: 40
-        readonly property int flyoutWidth: 280
-        readonly property int flyoutMaxHeight: 380
+        readonly property int flyoutWidth: 300
         readonly property int flyoutPadding: 14
         readonly property int flyoutDuration: 200
     }

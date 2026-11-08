@@ -39,6 +39,18 @@ ShellRoot {
             {key: "p6", uid: "p6", title: "截止", allDay: false, startMin: 1439, endMin: 1439, readOnly: true}
         ]})
     }
+    // Stand-in for CalendarService's editing side, recording what the flyout sends.
+    QtObject {
+        id: editStub
+        property var calls: []
+        signal eventLoaded(var event, string requester)
+        signal saved(string op, string uid)
+        signal failed(string op, string message)
+        function load(uid, requester) { calls = calls.concat(["load:" + uid + ":" + requester]); }
+        function create(event) { calls = calls.concat(["create:" + event.title + ":" + event.startMin]); }
+        function update(uid, event) { calls = calls.concat(["update:" + uid + ":" + event.startMin + "-" + event.endMin]); }
+        function remove(uid) { calls = calls.concat(["delete:" + uid]); }
+    }
     QtObject { id: firstScreen; property string name: "first" }
     QtObject { id: secondScreen; property string name: "second" }
     SidebarController {
@@ -60,6 +72,13 @@ ShellRoot {
             anchors.fill: parent
             theme: theme; user: user; clock: clock; notifications: notifications
             calendarService: calendarStub
+            ghost: flyout.ghost
+        }
+        EventFlyout {
+            id: flyout
+            theme: theme
+            calendar: editStub
+            todayKey: "2024-03-01"
         }
         CalendarPanel {
             id: calendar
@@ -107,6 +126,44 @@ ShellRoot {
             root.check(Calendar.timeLabel(ev("t", 545, 1440)) === "09:05 – 24:00", "time label formats minutes");
 
             content.resetCalendar();
+
+            // Flyout: subscription events are read-only and not reloaded.
+            flyout.showEvent({key: "p3", uid: "p3", title: "會議", date: "2024-03-01", allDay: false,
+                startMin: 600, endMin: 690, readOnly: true, calendar: "sub-12345678", calendarName: "課表"});
+            root.check(flyout.open && flyout.editor.readOnly && flyout.ghost === null && editStub.calls.length === 0,
+                "subscription events open read-only without a reload");
+            // Local events reload the series; only replies tagged for the sidebar are taken.
+            flyout.showEvent({key: "local/a/2024-03-01", uid: "a", title: "讀書", date: "2024-03-01", allDay: false,
+                startMin: 600, endMin: 660, readOnly: false, recurring: true, calendar: "local"});
+            root.check(editStub.calls[0] === "load:a:sidebar" && flyout.loading && !flyout.editor.readOnly,
+                "local events are loaded for editing");
+            editStub.eventLoaded({uid: "a", title: "別的", date: "2024-02-02", startMin: 600, endMin: 660, repeat: "DAILY"}, "window");
+            root.check(flyout.editor.title === "讀書" && flyout.loading, "replies for the window are ignored");
+            editStub.eventLoaded({uid: "a", title: "讀書", date: "2024-02-02", startMin: 600, endMin: 660, repeat: "WEEKLY"}, "sidebar");
+            root.check(!flyout.loading && flyout.editor.repeat === "WEEKLY", "the series fills the form");
+            flyout.editor.setStart(630);
+            root.check(flyout.editor.endMin === 690, "moving the start keeps the duration");
+            flyout.submit();
+            root.check(editStub.calls[1] === "update:a:630-690" && flyout.saving, "saving updates the event");
+            editStub.saved("update", "a");
+            root.check(!flyout.open, "a finished save closes the card");
+            // New events: dashed preview on the timeline, title required.
+            flyout.newEvent("2024-03-01", 840, 900);
+            root.check(flyout.ghost && root.findItem(content, "agendaTimelineGhost").visible,
+                "a new event is previewed on the timeline");
+            flyout.submit();
+            root.check(flyout.error !== "" && editStub.calls.length === 2, "an empty title is rejected locally");
+            flyout.editor.title = "散步";
+            flyout.submit();
+            root.check(editStub.calls[2] === "create:散步:840", "a titled new event is created");
+            editStub.failed("create", "disk full");
+            root.check(flyout.open && !flyout.saving && flyout.error === "disk full", "backend errors stay in the card");
+            flyout.editor.pickingDate = true;
+            root.check(flyout.dismissInner() && !flyout.editor.pickingDate && flyout.open,
+                "Esc closes the date picker before the card");
+            flyout.close();
+            root.check(!flyout.open && flyout.ghost === null, "closing clears the preview");
+
             root.check(calendarStub.rangeStart === "2024-02-26" && calendarStub.rangeEnd === "2024-04-08",
                 "the visible 42-day grid is requested from the service");
             root.check(content.selectedEvents.length === 2, "today's events come from the service");

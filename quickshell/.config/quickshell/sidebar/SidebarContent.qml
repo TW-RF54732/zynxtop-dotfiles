@@ -16,6 +16,8 @@ ColumnLayout {
     property list<Component> widgets: []
     // Key of the event shown in the flyout, owned by the host window.
     property string selectedEventKey: ""
+    // Pending new event from the flyout; drawn on the timeline when it is on the selected day.
+    property var ghost: null
     readonly property date today: clock.displayDate
     readonly property string todayKey: Calendar.dateKey(today.getFullYear(), today.getMonth(), today.getDate())
     property var selectedDay: ({year: today.getFullYear(), month: today.getMonth(), day: today.getDate()})
@@ -27,6 +29,8 @@ ColumnLayout {
     readonly property alias agendaItem: agenda
     signal eventActivated(var event)
     signal addRequested(string dateKey)
+    signal slotRequested(string dateKey, int minute)
+    signal weekRequested(string dateKey)
     signal daySelected()
     spacing: 16
 
@@ -101,12 +105,15 @@ ColumnLayout {
         events: root.selectedEvents
         selectedKey: root.selectedEventKey
         status: root.agendaStatus
+        ghost: root.ghost && root.ghost.date === root.selectedKey ? root.ghost : null
         Layout.fillWidth: true
         // Fixed height; only gives way on very short screens.
         Layout.preferredHeight: Math.min(root.theme.sidebar.agendaHeight, root.height * 0.3)
         Layout.maximumHeight: Layout.preferredHeight
         onEventActivated: event => root.eventActivated(event)
         onAddRequested: root.addRequested(root.selectedKey)
+        onSlotRequested: minute => root.slotRequested(root.selectedKey, minute)
+        onWeekRequested: root.weekRequested(root.selectedKey)
     }
     Separator { theme: root.theme; Layout.fillWidth: true }
     NotificationCenter {

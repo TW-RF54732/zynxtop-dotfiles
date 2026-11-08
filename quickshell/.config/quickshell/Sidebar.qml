@@ -13,11 +13,11 @@ Scope {
     required property var user
     required property var clock
     required property var notifications
-    // CalendarService; edits happen in the calendar window, reached via the signals below.
+    // CalendarService; events are viewed and edited in place in the flyout.
     property var calendar: null
     property list<Component> widgets: []
-    signal addEventRequested(string dateKey)
-    signal editEventRequested(var event)
+    // The agenda's week button: open the calendar window on this day's week.
+    signal weekRequested(string dateKey)
     function show() { controller.show(); }
     function hide() { controller.hide(); }
     function toggle() { controller.toggle(); }
@@ -48,9 +48,9 @@ Scope {
             // 0 (or a stale size) while unmapped, which made x animate in from the left.
             readonly property real layoutWidth: modelData.width
             readonly property bool isTarget: screen === controller.targetScreen
-            // Event shown in the flyout beside the panel; null when closed.
-            property var selectedEvent: null
             property real flyoutY: 0
+            // The flyout lines up with the top of the agenda.
+            function placeFlyout() { flyoutY = panel.y + content.agendaItem.mapToItem(panel, 0, 0).y; }
             objectName: isTarget ? "sidebarWindow" : "sidebarBackdrop"
             screen: modelData
             visible: lifecycle.mounted
@@ -67,7 +67,8 @@ Scope {
                 context: Qt.WindowShortcut
                 enabled: window.isTarget && lifecycle.mounted
                 onActivated: {
-                    if (window.selectedEvent) window.selectedEvent = null;
+                    if (flyout.dismissInner()) return;
+                    if (flyout.open) flyout.close();
                     else controller.hide();
                 }
             }
@@ -96,7 +97,7 @@ Scope {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.AllButtons
-                    onClicked: event => { event.accepted = true; window.selectedEvent = null; }
+                    onClicked: event => { event.accepted = true; flyout.close(); }
                     onWheel: event => event.accepted = true
                 }
                 SidebarContent {
@@ -109,35 +110,53 @@ Scope {
                     notifications: root.notifications
                     widgets: root.widgets
                     calendarService: root.calendar
-                    selectedEventKey: window.selectedEvent ? window.selectedEvent.key : ""
-                    onDaySelected: window.selectedEvent = null
-                    onAddRequested: dateKey => { controller.hide(); root.addEventRequested(dateKey); }
-                    onEventActivated: event => {
-                        if (window.selectedEvent && window.selectedEvent.key === event.key) {
-                            window.selectedEvent = null;
+                    selectedEventKey: flyout.open ? flyout.eventKey : ""
+                    ghost: flyout.ghost
+                    onDaySelected: flyout.close()
+                    onAddRequested: dateKey => {
+                        // Today: the next full hour; other days: 09:00.
+                        const start = dateKey === content.todayKey
+                            ? Math.min(23 * 60, Math.ceil((content.today.getHours() * 60 + content.today.getMinutes() + 1) / 60) * 60)
+                            : 9 * 60;
+                        window.placeFlyout();
+                        flyout.newEvent(dateKey, start, start + 60);
+                        content.agendaItem.revealRange(start, start + 60);
+                    }
+                    // With the card open, a click on empty time only closes it.
+                    onSlotRequested: (dateKey, minute) => {
+                        if (flyout.open) {
+                            flyout.close();
                             return;
                         }
-                        window.flyoutY = panel.y + content.agendaItem.mapToItem(panel, 0, 0).y;
-                        window.selectedEvent = event;
+                        window.placeFlyout();
+                        flyout.newEvent(dateKey, minute, minute + 60);
+                    }
+                    onEventActivated: event => {
+                        if (flyout.open && flyout.eventKey === event.key) {
+                            flyout.close();
+                            return;
+                        }
+                        window.placeFlyout();
+                        flyout.showEvent(event);
+                    }
+                    onWeekRequested: dateKey => {
+                        controller.hide();
+                        root.weekRequested(dateKey);
                     }
                 }
                 Connections {
                     target: controller
-                    function onOpened() { window.selectedEvent = null; content.resetCalendar(); }
-                    function onRequestedVisibleChanged() { if (!controller.requestedVisible) window.selectedEvent = null; }
+                    function onOpened() { flyout.close(); content.resetCalendar(); }
+                    function onRequestedVisibleChanged() { if (!controller.requestedVisible) flyout.close(); }
                 }
             }
             EventFlyout {
+                id: flyout
                 theme: root.theme
-                event: window.isTarget ? window.selectedEvent : null
+                calendar: root.calendar
+                todayKey: content.todayKey
                 x: panel.x - root.theme.sidebar.gap - width
-                y: Math.min(window.flyoutY, window.height - height - root.theme.sidebar.margin)
-                dayLabel: content.selectedKey.replace(/-/g, "/")
-                onEditRequested: event => { controller.hide(); root.editEventRequested(event); }
-                onDeleteRequested: event => {
-                    window.selectedEvent = null;
-                    if (root.calendar) root.calendar.remove(event.uid);
-                }
+                y: Math.max(panel.y, Math.min(window.flyoutY, window.height - height - root.theme.sidebar.margin))
             }
         }
     }

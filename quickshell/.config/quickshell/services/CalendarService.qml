@@ -25,10 +25,13 @@ JsonProcessService {
     property var weekEvents: ({})
     // Calendar sources: [{id, name, readOnly}], local first.
     property var calendars: []
+    // Requesters of in-flight "get" requests; the backend answers in order.
+    property var loadQueue: []
 
     signal saved(string op, string uid)
     signal failed(string op, string message)
-    signal eventLoaded(var event)
+    // `requester` echoes the tag given to load(), so each view only takes its own replies.
+    signal eventLoaded(var event, string requester)
     signal subscribed(string id)
 
     command: ["python3", "-I", Qt.resolvedUrl("calendar_backend.py").toString().replace("file://", ""),
@@ -68,7 +71,11 @@ JsonProcessService {
     function create(event) { lastError = ""; send({op: "create", event: event}); }
     function update(uid, event) { lastError = ""; send({op: "update", uid: uid, event: event}); }
     function remove(uid) { lastError = ""; send({op: "delete", uid: uid}); }
-    function load(uid) { send({op: "get", uid: uid}); }
+    function load(uid, requester) {
+        if (!running) return;
+        loadQueue = loadQueue.concat([requester || ""]);
+        send({op: "get", uid: uid});
+    }
     function subscribe(name, url) { lastError = ""; send({op: "subscribe", name: name, url: url}); }
     function unsubscribe(id) { lastError = ""; send({op: "unsubscribe", subscriptionId: id}); }
     function sync() { if (available) send({op: "sync"}); }
@@ -124,13 +131,17 @@ JsonProcessService {
         case "subscribe":
             subscribed(message.subscriptionId || "");
             break;
-        case "get":
-            eventLoaded(message.event);
+        case "get": {
+            const requester = loadQueue.length ? loadQueue[0] : "";
+            loadQueue = loadQueue.slice(1);
+            eventLoaded(message.event, requester);
             break;
+        }
         case "create": case "update": case "delete":
             saved(message.op, message.uid || "");
             break;
         case "error":
+            if (message.request === "get") loadQueue = loadQueue.slice(1);
             lastError = message.message || "error";
             failed(message.request || "", lastError);
             break;
@@ -138,6 +149,7 @@ JsonProcessService {
     }
     onDisconnected: {
         ready = false;
+        loadQueue = [];
         syncing = false;
     }
     // Pull subscriptions once at startup; the timer keeps them fresh afterwards.

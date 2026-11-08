@@ -30,8 +30,7 @@ ShellRoot {
         clock: clockService
         notifications: notificationService
         calendar: calendarService
-        onAddEventRequested: dateKey => calendarWindow.newEvent(dateKey)
-        onEditEventRequested: event => calendarWindow.openEvent(event.uid, event.date)
+        onWeekRequested: dateKey => calendarWindow.showDate(dateKey)
     }
     CalendarWindow {
         id: calendarWindow
