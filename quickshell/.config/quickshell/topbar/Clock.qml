@@ -10,6 +10,7 @@ Row {
     required property ClockService clock
 
     MonoText {
+        id: dateText
         theme: root.theme
         anchors.verticalCenter: parent.verticalCenter
         text: Qt.formatDateTime(root.clock.displayDate, "ddd  MM/dd")
@@ -26,23 +27,32 @@ Row {
         color: root.theme.colors.separator
     }
 
-    MonoIcon {
-        theme: root.theme
-        anchors.verticalCenter: parent.verticalCenter
-        width: root.theme.topBar.iconSize
-        height: width
-        name: root.clock.daytime ? "half-top" : "half-bottom"
-        color: root.theme.colors.textSecondary
-        lineWidth: root.theme.topBar.iconStrokeWidth
-    }
-
     MonoText {
+        id: timeText
         theme: root.theme
-        anchors.verticalCenter: parent.verticalCenter
+        // Digits sit on the same baseline as the date text.
+        anchors.baseline: dateText.baseline
         text: root.clock.timeText
         tone: root.theme.colors.textPrimary
         font.pixelSize: root.theme.topBar.clockSize
         font.bold: true
+
+        // Elapsed share of the 24-hour day, drawn as an underline just below the digits.
+        Rectangle {
+            anchors.top: parent.baseline
+            anchors.topMargin: root.theme.topBar.clockProgressGap
+            width: parent.implicitWidth
+            height: root.theme.topBar.clockProgressHeight
+            radius: height / 2
+            color: root.theme.colors.separator
+
+            Rectangle {
+                width: Math.round(parent.width * root.clock.dayProgress)
+                height: parent.height
+                radius: parent.radius
+                color: root.theme.colors.textSecondary
+            }
+        }
     }
 
 }
