@@ -77,6 +77,12 @@ QtObject {
         readonly property int padding: 24
     }
 
+    readonly property var calendarWindow: QtObject {
+        readonly property int width: 780
+        readonly property int height: 560
+        readonly property int sidebarWidth: 270
+    }
+
     readonly property var inputMethod: QtObject {
         readonly property string fontFamily: "Noto Sans CJK TC"
         readonly property int fontSize: 20
@@ -96,6 +102,14 @@ QtObject {
         readonly property int padding: 20
         readonly property int gap: 8
         readonly property int animationDuration: 220
+        // Day agenda between the calendar and notifications: list | timeline.
+        readonly property int agendaHeight: 260
+        readonly property int agendaRowHeight: 40
+        readonly property int hourHeight: 40
+        readonly property int flyoutWidth: 280
+        readonly property int flyoutMaxHeight: 380
+        readonly property int flyoutPadding: 14
+        readonly property int flyoutDuration: 200
     }
 
     readonly property var dashboard: QtObject {

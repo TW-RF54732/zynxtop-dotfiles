@@ -323,7 +323,7 @@ git diff --check
 
 側欄寬度預設 400px，右側與底部保留 24px，位於正常 Top Bar 下方，以 220ms 動畫滑入／滑出，不改變工作區大小。介面沿用玻璃背景；Hyprland 的 `quickshell-sidebar` layer rule 使用 `ignore_alpha = 0.01`，透明外部區域不模糊。尺寸與動畫集中於 `Style.qml` 的 `sidebar`。
 
-由上至下為帳號頭像／名稱／UTC 日期、週一開始的六列月曆、未讀通知。頭像依序讀取 `~/.face.icon`、`~/.face`；沒有可用圖片時顯示名稱首字。日期共用 Top Bar 的 UTC 時鐘。月曆支援上／下月及回到今天，每次重新開啟回到本月，不串接行程。通知沿用來源分組與已讀操作，開啟面板不會自動標為已讀；「清除」沿用原有行為，刪除所有通知歷史。小螢幕讓上半部獨立捲動，通知保有自己的捲動區。
+由上至下為帳號頭像／名稱／UTC 日期、週一開始的六列月曆、未讀通知。頭像依序讀取 `~/.face.icon`、`~/.face`；沒有可用圖片時顯示名稱首字。日期共用 Top Bar 的 UTC 時鐘。月曆支援上／下月及回到今天，點擊日期可選取該日，有行程的日子在數字下方顯示灰點；每次重新開啟回到本月並選取今天。通知沿用來源分組與已讀操作，開啟面板不會自動標為已讀；「清除」沿用原有行為，刪除所有通知歷史。小螢幕讓上半部獨立捲動，通知保有自己的捲動區。
 
 ```sh
 qs ipc call sidebar toggle
@@ -333,7 +333,35 @@ qs ipc call -- sidebar hide
 
 `show` 與 Quickshell CLI 子命令同名，因此明確使用 `--` 分隔位置參數。
 
-未來小工具透過 `Sidebar.widgets` 的 `list<Component>` 加入，排列於月曆之後、通知之前。各小工具用 `implicitHeight` 宣告高度，寬度由容器提供；主題與所需服務由 Component 明確注入。例如：
+### 日程與行事曆
+
+月曆與通知之間是固定高度（`Style.sidebar.agendaHeight`，預設 260px）的日程區，左右對半：左側條列選取日的事項（全天在前，依時間排序），右側為可捲動的 24 小時時間軸，重疊事項並排分欄、全天事項置頂；選取今天時顯示現在時間指針，開啟時捲到指針附近，其他日子捲到第一個事項。點擊左側條列會把該事項在時間軸上平滑捲至中央（到頂或底時停在邊界）。
+
+點擊條列或時間軸上的事項，會在側欄左側彈出詳情卡片（樣式同 Dashboard flyout）：標題、時間、日曆、地點、備註；本機事項另有「編輯」（開啟管理視窗）與「刪除」（直接執行，不需確認）。再點一次同一事項、點側欄其他處、切換日期或 `Esc` 關閉卡片。日程標題列的 `+` 會以選取日開啟新增表單。
+
+後端使用成熟工具，UI 自行繪製：
+
+- 儲存：標準 vdir（每個日曆一個 `.ics` 資料夾）位於 `~/.local/share/calendars/`；`local/` 為本機事項，`sub-<id>/` 為訂閱，其他 vdir（例如 khal 的）會唯讀顯示。
+- 解析與重複規則：`python-icalendar`、`python-recurring-ical-events`、`python-x-wr-timezone`，所有時間換算為 `Asia/Taipei`。
+- 訂閱：唯讀 ICS 網址（Google 日曆「iCal 格式的私密網址」、Outlook、假日、課表等），由 `vdirsyncer` 每 30 分鐘同步。網址與 vdirsyncer 設定只存在 `Quickshell.stateDir/calendar/`（權限 600），不進 dotfiles。
+
+```sh
+sudo pacman -S vdirsyncer python-icalendar python-recurring-ical-events python-x-wr-timezone
+```
+
+缺少套件時日程區顯示 `UNAVAILABLE`，管理視窗列出缺少的套件。
+
+管理視窗（`CalendarWindow.qml`，結構同 WireGuard 控制器）：`EVENTS` 分頁列出未來 120 天的本機事項（重複事項只列下一次），可新增／編輯／刪除（標題、日期、全天、起訖時間、重複：每日／週／月／年、地點、備註；重複事項的修改套用到整個系列）；`SUBSCRIPTIONS` 分頁新增／移除 ICS 訂閱、查看最後同步時間與錯誤、立即同步。
+
+```sh
+qs ipc call calendar toggle
+qs ipc call calendar newEvent 2026-11-08
+qs ipc call calendar sync
+```
+
+驗證：`bash tests/run-calendar.sh` 以暫存資料夾驅動真實後端（CRUD、RRULE/EXDATE、時區、跨日、以本機 HTTP 伺服器模擬 vdirsyncer 訂閱），並測試 `CalendarService` 與管理視窗表單。
+
+未來小工具透過 `Sidebar.widgets` 的 `list<Component>` 加入，排列於月曆之後、日程之前。各小工具用 `implicitHeight` 宣告高度，寬度由容器提供；主題與所需服務由 Component 明確注入。例如：
 
 ```qml
 widgets: [Component {

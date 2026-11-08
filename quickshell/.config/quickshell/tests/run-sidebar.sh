@@ -11,7 +11,7 @@ shutil.copytree(sys.argv[1], sys.argv[2], symlinks=False,
                 ignore=shutil.ignore_patterns('.qmlls.ini', '.git', '.agents', '.codex'))
 PY
 if ! dbus-run-session -- env XDG_RUNTIME_DIR="$test_dir/runtime" \
-    XDG_STATE_HOME="$test_dir/state" WAYLAND_DISPLAY= QT_QPA_PLATFORM=offscreen \
+    XDG_STATE_HOME="$test_dir/state" XDG_DATA_HOME="$test_dir/data" WAYLAND_DISPLAY= QT_QPA_PLATFORM=offscreen \
     timeout 15s qs -p "$test_dir/config/sidebar-tests.qml" --no-color > "$test_dir/log" 2>&1; then
     cat "$test_dir/log"
     exit 1

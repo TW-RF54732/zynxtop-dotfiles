@@ -21,6 +21,7 @@ ShellRoot {
     NotificationService { id: notificationService; defaultTimeout: sharedTheme.notifications.defaultTimeout }
     WireGuardService { id: wireGuardService }
     UserService { id: userService }
+    CalendarService { id: calendarService }
 
     Sidebar {
         theme: sharedTheme
@@ -28,6 +29,15 @@ ShellRoot {
         user: userService
         clock: clockService
         notifications: notificationService
+        calendar: calendarService
+        onAddEventRequested: dateKey => calendarWindow.newEvent(dateKey)
+        onEditEventRequested: event => calendarWindow.openEvent(event.uid)
+    }
+    CalendarWindow {
+        id: calendarWindow
+        theme: sharedTheme
+        calendar: calendarService
+        todayKey: Qt.formatDate(clockService.displayDate, "yyyy-MM-dd")
     }
 
     InputMethodWindow {

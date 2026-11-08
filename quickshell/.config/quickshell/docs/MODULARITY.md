@@ -105,11 +105,12 @@ Wayland 實機仍需確認焦點、點擊外部關閉、動畫、長清單捲動
 
 ## 右側個人側欄
 
-- `Sidebar` 接收 `theme`、`compositor`、`user`、`clock`、`notifications` 與可選的 `widgets: list<Component>`；公開 `show()`、`hide()`、`toggle()`，IPC target 為 `sidebar`。視窗與透明外部點擊區使用 overlay layer，僅目標螢幕取得鍵盤焦點。
+- `Sidebar` 接收 `theme`、`compositor`、`user`、`clock`、`notifications`、可選的 `calendar`（CalendarService）與 `widgets: list<Component>`；發出 `addEventRequested(dateKey)`、`editEventRequested(event)`，由 `shell.qml` 轉給 `CalendarWindow`；公開 `show()`、`hide()`、`toggle()`，IPC target 為 `sidebar`。視窗與透明外部點擊區使用 overlay layer，僅目標螢幕取得鍵盤焦點。
 - `SidebarController` 接收螢幕清單與焦點螢幕名稱，固定每次展開的目標，螢幕移除時收合。`AnimatedVisibility` 管理動畫結束後的視窗卸載。
-- `sidebar/` 組裝個人卡、月曆及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
+- `sidebar/` 組裝個人卡、月曆、日程（`AgendaPanel` = `AgendaList` | `AgendaTimeline`）、事項詳情卡片 `EventFlyout` 及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
 - `UserService` 暴露 `displayName`、`avatar`，以一次性 Python 程序讀取目前帳號及本地頭像；`CompositorService.focusedMonitor` 暴露目前焦點螢幕。
-- `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。
+- `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。`Calendar.layoutDay()` 是時間軸重疊分欄的純函式。
+- `CalendarService`（`JsonProcessService`）連接常駐的 `services/calendar_backend.py`（JSON lines：`range`、`get`、`create`、`update`、`delete`、`subscriptions`、`subscribe`、`unsubscribe`、`sync`），暴露 `eventsByDay`、`markedDays`、`managerEvents`、`subscriptions`、`syncing`、`available`。後端輸出的時間已換算為台北牆上時間（日期字串 + 分鐘數），QML 不做時區運算。
 
 
 ## 通知區塊與動畫

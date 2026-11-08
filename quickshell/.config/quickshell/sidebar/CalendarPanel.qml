@@ -12,6 +12,10 @@ ColumnLayout {
     property int displayedYear: today.getFullYear()
     property int displayedMonth: today.getMonth()
     readonly property var cells: Calendar.monthCells(displayedYear, displayedMonth)
+    // "YYYY-MM-DD" of the selected day, and a {key: true} set of days that have events.
+    property string selectedKey: ""
+    property var markedDays: ({})
+    signal daySelected(var cell)
     spacing: 6
 
     function reset() {
@@ -71,13 +75,28 @@ ColumnLayout {
             Rectangle {
                 required property var modelData
                 readonly property bool isToday: Calendar.sameDay(modelData, root.today)
+                readonly property string key: Calendar.cellKey(modelData)
+                readonly property bool isSelected: key === root.selectedKey
                 Layout.fillWidth: true
                 Layout.preferredWidth: 36
                 Layout.preferredHeight: 30
                 radius: root.theme.geometry.cornerRadius
                 color: isToday ? root.theme.colors.frame : "transparent"
-                border.width: isToday ? 1 : 0
-                border.color: root.theme.colors.textSecondary
+                border.width: isToday || isSelected ? 1 : 0
+                border.color: isToday ? root.theme.colors.textSecondary : root.theme.colors.textMuted
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.daySelected(parent.modelData)
+                }
+                Rectangle {
+                    width: 3; height: 3; radius: 1.5
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 3
+                    color: root.theme.colors.textMuted
+                    visible: root.markedDays[parent.key] === true
+                }
                 MonoText {
                     theme: root.theme
                     anchors.centerIn: parent

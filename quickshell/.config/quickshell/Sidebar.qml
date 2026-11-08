@@ -13,7 +13,11 @@ Scope {
     required property var user
     required property var clock
     required property var notifications
+    // CalendarService; edits happen in the calendar window, reached via the signals below.
+    property var calendar: null
     property list<Component> widgets: []
+    signal addEventRequested(string dateKey)
+    signal editEventRequested(var event)
     function show() { controller.show(); }
     function hide() { controller.hide(); }
     function toggle() { controller.toggle(); }
@@ -44,6 +48,9 @@ Scope {
             // 0 (or a stale size) while unmapped, which made x animate in from the left.
             readonly property real layoutWidth: modelData.width
             readonly property bool isTarget: screen === controller.targetScreen
+            // Event shown in the flyout beside the panel; null when closed.
+            property var selectedEvent: null
+            property real flyoutY: 0
             objectName: isTarget ? "sidebarWindow" : "sidebarBackdrop"
             screen: modelData
             visible: lifecycle.mounted
@@ -59,7 +66,10 @@ Scope {
                 sequence: "Escape"
                 context: Qt.WindowShortcut
                 enabled: window.isTarget && lifecycle.mounted
-                onActivated: controller.hide()
+                onActivated: {
+                    if (window.selectedEvent) window.selectedEvent = null;
+                    else controller.hide();
+                }
             }
             MouseArea {
                 anchors.fill: parent
@@ -86,7 +96,7 @@ Scope {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.AllButtons
-                    onClicked: event => event.accepted = true
+                    onClicked: event => { event.accepted = true; window.selectedEvent = null; }
                     onWheel: event => event.accepted = true
                 }
                 SidebarContent {
@@ -98,10 +108,35 @@ Scope {
                     clock: root.clock
                     notifications: root.notifications
                     widgets: root.widgets
+                    calendarService: root.calendar
+                    selectedEventKey: window.selectedEvent ? window.selectedEvent.key : ""
+                    onDaySelected: window.selectedEvent = null
+                    onAddRequested: dateKey => { controller.hide(); root.addEventRequested(dateKey); }
+                    onEventActivated: event => {
+                        if (window.selectedEvent && window.selectedEvent.key === event.key) {
+                            window.selectedEvent = null;
+                            return;
+                        }
+                        window.flyoutY = panel.y + content.agendaItem.mapToItem(panel, 0, 0).y;
+                        window.selectedEvent = event;
+                    }
                 }
                 Connections {
                     target: controller
-                    function onOpened() { content.resetCalendar(); }
+                    function onOpened() { window.selectedEvent = null; content.resetCalendar(); }
+                    function onRequestedVisibleChanged() { if (!controller.requestedVisible) window.selectedEvent = null; }
+                }
+            }
+            EventFlyout {
+                theme: root.theme
+                event: window.isTarget ? window.selectedEvent : null
+                x: panel.x - root.theme.sidebar.gap - width
+                y: Math.min(window.flyoutY, window.height - height - root.theme.sidebar.margin)
+                dayLabel: content.selectedKey.replace(/-/g, "/")
+                onEditRequested: event => { controller.hide(); root.editEventRequested(event); }
+                onDeleteRequested: event => {
+                    window.selectedEvent = null;
+                    if (root.calendar) root.calendar.remove(event.uid);
                 }
             }
         }

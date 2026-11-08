@@ -24,6 +24,21 @@ ShellRoot {
     NotificationService { id: notifications }
     QtObject { id: user; property string displayName: "測試使用者"; property string avatar: "" }
     QtObject { id: clock; property date displayDate: new Date(2024, 1, 29, 23, 59) }
+    // Stand-in for CalendarService: today (2024-03-01 after the midnight step) has two events.
+    QtObject {
+        id: calendarStub
+        property bool ready: true
+        property var missing: []
+        property bool syncing: false
+        property string rangeStart: ""
+        property string rangeEnd: ""
+        function setRange(start, end) { rangeStart = start; rangeEnd = end; }
+        property var markedDays: ({"2024-03-01": true})
+        property var eventsByDay: ({"2024-03-01": [
+            {key: "p3", uid: "p3", title: "會議", allDay: false, startMin: 600, endMin: 690, readOnly: true},
+            {key: "p6", uid: "p6", title: "截止", allDay: false, startMin: 1439, endMin: 1439, readOnly: true}
+        ]})
+    }
     QtObject { id: firstScreen; property string name: "first" }
     QtObject { id: secondScreen; property string name: "second" }
     SidebarController {
@@ -44,6 +59,7 @@ ShellRoot {
             id: content
             anchors.fill: parent
             theme: theme; user: user; clock: clock; notifications: notifications
+            calendarService: calendarStub
         }
         CalendarPanel {
             id: calendar
@@ -76,8 +92,39 @@ ShellRoot {
             clock.displayDate = new Date(2024, 2, 1, 0, 0);
             root.check(Calendar.sameDay({year: 2024, month: 2, day: 1}, calendar.today),
                 "midnight updates today from the shared wall clock");
+            const ev = (key, start, end, allDay) => ({key: key, title: key, startMin: start, endMin: end, allDay: !!allDay});
+            const laid = Calendar.layoutDay([ev("a", 600, 660), ev("b", 630, 720), ev("c", 660, 690),
+                ev("d", 800, 830), ev("all", 0, 1440, true), ev("z", 1439, 1439)]);
+            const byKey = {}; laid.forEach(item => byKey[item.event.key] = item);
+            root.check(laid.length === 5 && !byKey.all, "all-day events stay out of the timeline columns");
+            root.check(byKey.a.columns === 2 && byKey.b.columns === 2 && byKey.c.columns === 2,
+                "chained overlaps share one column count");
+            root.check(byKey.a.column === 0 && byKey.b.column === 1 && byKey.c.column === 0,
+                "a freed column is reused");
+            root.check(byKey.d.columns === 1 && byKey.d.column === 0, "separate cluster resets columns");
+            root.check(byKey.z.end === 1440 && byKey.z.start === 1439, "zero-length event near midnight stays inside the day");
+            root.check(Calendar.dateKey(2024, 1, 9) === "2024-02-09", "date keys are zero padded");
+            root.check(Calendar.timeLabel(ev("t", 545, 1440)) === "09:05 – 24:00", "time label formats minutes");
+
             content.resetCalendar();
-            host.height = 280;
+            root.check(calendarStub.rangeStart === "2024-02-26" && calendarStub.rangeEnd === "2024-04-08",
+                "the visible 42-day grid is requested from the service");
+            root.check(content.selectedEvents.length === 2, "today's events come from the service");
+            const agenda = root.findItem(content, "sidebarAgenda");
+            const pointer = root.findItem(content, "agendaNowPointer");
+            root.check(content.selectedKey === "2024-03-01" && agenda.isToday && pointer.visible,
+                "reset selects today and shows the now pointer");
+            let activated = null;
+            content.eventActivated.connect(event => activated = event);
+            agenda.eventActivated({key: "x"});
+            root.check(activated && activated.key === "x", "agenda events bubble up to the host");
+            content.selectDay({year: 2024, month: 3, day: 2});
+            root.check(content.selectedKey === "2024-04-02" && !agenda.isToday && !pointer.visible,
+                "selecting another day moves the calendar and hides the pointer");
+            root.check(root.findItem(content, "sidebarCalendar").displayedMonth === 3,
+                "selecting an adjacent-month day follows to that month");
+            content.resetCalendar();
+            host.height = 520;
             smallLayout.restart();
             controller.show();
             root.check(controller.targetScreen === secondScreen && controller.requestedVisible,
@@ -93,10 +140,39 @@ ShellRoot {
         onTriggered: {
             const upper = root.findItem(content, "sidebarUpperScroll");
             const center = root.findItem(content, "sidebarNotifications");
-            root.check(upper.height <= content.height * 0.55 + 1 && upper.contentHeight > upper.height,
-                "small-height header scrolls within its 55 percent budget");
+            const agenda = root.findItem(content, "sidebarAgenda");
+            root.check(upper.height <= content.height * 0.45 + 1 && upper.contentHeight > upper.height,
+                "small-height header scrolls within its 45 percent budget");
+            root.check(agenda.height > 100 && agenda.height <= theme.sidebar.agendaHeight,
+                "agenda keeps a fixed, bounded height");
+            const timeline = root.findItem(content, "agendaTimeline");
+            timeline.scrollToEvent({key: "p3", allDay: false});
+            centered.restart();
             root.check(center.height > 50 && center.y + center.height <= content.height + 1,
                 "small-height layout preserves a usable notification viewport");
+        }
+    }
+    Timer {
+        id: centered; interval: 700
+        onTriggered: {
+            const timeline = root.findItem(content, "agendaTimeline");
+            const flick = root.findItem(content, "agendaTimelineScroll");
+            const middle = timeline.minuteY(10 * 60 + 45) + 4;
+            root.check(Math.abs(flick.contentY + flick.height / 2 - middle) < 1,
+                "activating a list event centers it on the timeline");
+            timeline.scrollToEvent({key: "p6", allDay: false});
+            clamped.restart();
+        }
+    }
+    Timer {
+        id: clamped; interval: 700
+        onTriggered: {
+            const flick = root.findItem(content, "agendaTimelineScroll");
+            root.check(Math.abs(flick.contentY - (flick.contentHeight - flick.height)) < 1,
+                "a late event stops at the bottom bound instead of centering");
+            // Last timer in the chain: the panel lifecycle checks finish well before.
+            console.log(root.failures ? "FAIL: sidebar checks" : "PASS: sidebar checks");
+            Qt.quit();
         }
     }
     Timer {
@@ -118,8 +194,6 @@ ShellRoot {
             root.check(controller.targetScreen === secondScreen, "missing focus falls back to first screen");
             controller.hide(); controller.screens = []; controller.show();
             root.check(!controller.requestedVisible, "no screens means no panel");
-            console.log(root.failures ? "FAIL: sidebar checks" : "PASS: sidebar checks");
-            Qt.quit();
         }
     }
 }
