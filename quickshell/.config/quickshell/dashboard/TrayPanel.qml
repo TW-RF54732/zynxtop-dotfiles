@@ -5,15 +5,19 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Services.SystemTray
 import "../components"
+import "../services"
 
 // Tray icons as plain content; DashboardFlyout provides the frame.
+// Left click opens the app; the hover badge ends its process.
 Item {
     id: root
 
     required property var theme
+    property TrayProcessService processes: null
     readonly property int cell: theme.dashboard.trayIconSize + 10
+    readonly property string error: processes ? processes.lastError : ""
     implicitWidth: 4 * cell + 3 * grid.spacing
-    implicitHeight: Math.max(cell, grid.implicitHeight)
+    implicitHeight: Math.max(cell, grid.implicitHeight) + (error ? errorText.height + 6 : 0)
 
     Flow {
         id: grid
@@ -28,7 +32,7 @@ Item {
 
                 theme: root.theme
                 hoverEnabled: true
-                active: mouse.containsMouse
+                active: hover.hovered
                 width: root.theme.dashboard.trayIconSize + 10
                 height: width
 
@@ -57,8 +61,50 @@ Item {
                     }
                     onWheel: event => button.modelData.scroll(event.angleDelta.y, false)
                 }
+                HoverHandler { id: hover }
+                Rectangle {
+                    id: quitBadge
+                    readonly property int size: 12
+                    x: button.width - size
+                    y: 0
+                    width: size
+                    height: size
+                    radius: root.theme.geometry.cornerRadius
+                    color: root.theme.colors.topBarSurface
+                    border.width: root.theme.topBar.dividerWidth
+                    border.color: root.theme.colors.separator
+                    visible: root.processes !== null && hover.hovered && !!button.modelData?.id
+                    Accessible.role: Accessible.Button
+                    Accessible.name: "Quit " + (button.modelData?.title || button.modelData?.id || "")
+                    MonoIcon {
+                        anchors.centerIn: parent
+                        width: 8
+                        height: 8
+                        theme: root.theme
+                        name: "close"
+                        lineWidth: 1.4
+                        color: quitMouse.containsMouse ? root.theme.colors.textPrimary : root.theme.colors.textSecondary
+                    }
+                    MouseArea {
+                        id: quitMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.processes.terminate(button.modelData)
+                    }
+                }
+            }
         }
-        }
+    }
+    MonoText {
+        id: errorText
+        anchors.top: grid.bottom
+        anchors.topMargin: 6
+        theme: root.theme
+        text: root.error
+        visible: root.error !== ""
+        tone: root.theme.colors.textMuted
+        font.pixelSize: 11
     }
     MonoText {
         anchors.verticalCenter: parent.verticalCenter

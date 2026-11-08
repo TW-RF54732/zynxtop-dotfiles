@@ -33,6 +33,7 @@ Scope {
     }
     SystemStatsService { id: systemStats; enabled: root.dashboardOpen }
     SystemStatusService { id: systemStatus; enabled: root.dashboardOpen }
+    TrayProcessService { id: trayProcessService }
 
     IpcHandler {
         target: "topbar"
@@ -151,6 +152,7 @@ Scope {
                     theme: root.theme
                     kind: root.flyout
                     powerItems: PowerEntries.build(systemStatus.status.capabilities || ({}), systemStatus.busy)
+                    trayProcesses: trayProcessService
                     maximumHeight: barWindow.dashboardHeight
                     x: parent.width - width * reveal
                     y: barWindow.dashboardReveal - barWindow.dashboardHeight

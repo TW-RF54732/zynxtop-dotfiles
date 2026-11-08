@@ -132,6 +132,13 @@ Item {
                 context.moveTo(width * 0.5, height * 0.12)
                 context.lineTo(width * 0.5, height * 0.5)
                 context.stroke()
+            } else if (root.name === "close") {
+                context.beginPath()
+                context.moveTo(width * 0.28, height * 0.28)
+                context.lineTo(width * 0.72, height * 0.72)
+                context.moveTo(width * 0.72, height * 0.28)
+                context.lineTo(width * 0.28, height * 0.72)
+                context.stroke()
             } else if (root.name === "tray") {
                 for (let i = 0; i < 4; ++i) {
                     const x = width * (i % 2 ? 0.54 : 0.14)

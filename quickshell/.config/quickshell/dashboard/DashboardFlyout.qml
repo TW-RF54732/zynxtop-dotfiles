@@ -8,6 +8,7 @@ GlassFrame {
 
     property string kind: ""
     property var powerItems: []
+    property var trayProcesses: null
     property real maximumHeight: 300
     // Content stays on the last requested kind while the card fades out.
     property string content: ""
@@ -39,6 +40,7 @@ GlassFrame {
     TrayPanel {
         id: tray
         theme: root.theme
+        processes: root.trayProcesses
         x: root.pad; y: root.pad
         width: root.theme.powerMenu.width
         opacity: root.content === "tray" ? 1 : 0
