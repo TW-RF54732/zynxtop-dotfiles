@@ -167,6 +167,7 @@ QtObject {
         readonly property int clockSize: 17
         readonly property int clockProgressHeight: 2
         readonly property int clockProgressGap: 4
+        readonly property int clockProgressOverhang: 4
         readonly property int windowHeight: topMargin + height + bottomMargin
     }
 }

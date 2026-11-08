@@ -36,12 +36,15 @@ Row {
         tone: root.theme.colors.textPrimary
         font.pixelSize: root.theme.topBar.clockSize
         font.bold: true
+        // Widen the slot so the underline extends past the digits on both sides.
+        width: implicitWidth + root.theme.topBar.clockProgressOverhang * 2
+        horizontalAlignment: Text.AlignHCenter
 
         // Elapsed share of the 24-hour day, drawn as an underline just below the digits.
         Rectangle {
             anchors.top: parent.baseline
             anchors.topMargin: root.theme.topBar.clockProgressGap
-            width: parent.implicitWidth
+            width: parent.width
             height: root.theme.topBar.clockProgressHeight
             radius: height / 2
             color: root.theme.colors.separator
