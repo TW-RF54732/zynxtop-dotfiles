@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 
-// Calendar state for the Sidebar agenda and the calendar manager window.
+// Calendar state for the Sidebar agenda and the calendar week window.
 // Storage, recurrence and subscriptions live in calendar_backend.py (vdir + vdirsyncer).
 JsonProcessService {
     id: root
@@ -20,10 +20,11 @@ JsonProcessService {
     property string rangeEnd: ""
     property var eventsByDay: ({})
     property var markedDays: ({})
-    // Manager window: local events from managerStart for managerDays days.
-    property string managerStart: ""
-    property int managerDays: 120
-    property var managerEvents: []
+    // Week window: all calendars for [weekStart, weekStart + 7 days), grouped per day.
+    property string weekStart: ""
+    property var weekEvents: ({})
+    // Calendar sources: [{id, name, readOnly}], local first.
+    property var calendars: []
 
     signal saved(string op, string uid)
     signal failed(string op, string message)
@@ -43,20 +44,25 @@ JsonProcessService {
         if (available && rangeStart && rangeEnd)
             send({op: "range", start: rangeStart, end: rangeEnd, tag: "sidebar"});
     }
-    function setManagerStart(start) {
-        managerStart = start;
-        requestManager();
+    function setWeek(start) {
+        if (start === weekStart) return;
+        weekStart = start;
+        weekEvents = {};
+        requestWeek();
     }
-    function requestManager() {
-        if (!available || !managerStart) return;
-        const end = new Date(managerStart + "T00:00:00Z");
-        end.setUTCDate(end.getUTCDate() + managerDays);
-        send({op: "range", start: managerStart, end: end.toISOString().slice(0, 10),
-            calendars: ["local"], tag: "manager"});
+    function requestWeek() {
+        if (!available || !weekStart) return;
+        const end = new Date(weekStart + "T00:00:00Z");
+        end.setUTCDate(end.getUTCDate() + 7);
+        send({op: "range", start: weekStart, end: end.toISOString().slice(0, 10), tag: "week"});
+    }
+    function requestCalendars() {
+        if (available) send({op: "calendars"});
     }
     function refresh() {
         requestRange();
-        requestManager();
+        requestWeek();
+        requestCalendars();
     }
 
     function create(event) { lastError = ""; send({op: "create", event: event}); }
@@ -80,17 +86,6 @@ JsonProcessService {
         for (const key in days) marks[key] = true;
         return marks;
     }
-    // Manager list: one row per event (a series shows its next occurrence), in date order.
-    function uniqueEvents(events) {
-        const sorted = events.slice().sort((a, b) => a.date !== b.date ? (a.date < b.date ? -1 : 1)
-            : (a.allDay !== b.allDay ? (a.allDay ? -1 : 1) : a.startMin - b.startMin));
-        const seen = {};
-        return sorted.filter(event => {
-            if (seen[event.uid]) return false;
-            seen[event.uid] = true;
-            return true;
-        });
-    }
     onMessageReceived: message => {
         switch (message.op) {
         case "ready":
@@ -104,6 +99,11 @@ JsonProcessService {
             break;
         case "subscriptions":
             subscriptions = message.items || [];
+            requestCalendars();
+            break;
+        case "calendars":
+            calendars = (message.items || []).slice().sort((a, b) =>
+                a.id === "local" ? -1 : b.id === "local" ? 1 : String(a.name).localeCompare(String(b.name)));
             break;
         case "syncing":
             syncing = message.value === true;
@@ -116,8 +116,8 @@ JsonProcessService {
                 const days = groupByDay(message.events || []);
                 markedDays = markDays(days);
                 eventsByDay = days;
-            } else if (message.tag === "manager" && message.start === managerStart) {
-                managerEvents = uniqueEvents(message.events || []);
+            } else if (message.tag === "week" && message.start === weekStart) {
+                weekEvents = groupByDay(message.events || []);
             }
             if (message.errors && message.errors.length) console.warn("calendar:", message.errors.join("; "));
             break;

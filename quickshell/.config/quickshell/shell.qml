@@ -31,13 +31,14 @@ ShellRoot {
         notifications: notificationService
         calendar: calendarService
         onAddEventRequested: dateKey => calendarWindow.newEvent(dateKey)
-        onEditEventRequested: event => calendarWindow.openEvent(event.uid)
+        onEditEventRequested: event => calendarWindow.openEvent(event.uid, event.date)
     }
     CalendarWindow {
         id: calendarWindow
         theme: sharedTheme
         calendar: calendarService
         todayKey: Qt.formatDate(clockService.displayDate, "yyyy-MM-dd")
+        nowMinute: clockService.displayDate.getHours() * 60 + clockService.displayDate.getMinutes()
     }
 
     InputMethodWindow {

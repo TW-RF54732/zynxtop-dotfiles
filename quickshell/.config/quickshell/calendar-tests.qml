@@ -20,8 +20,8 @@ ShellRoot {
         onAvailableChanged: if (available && root.step === "start") {
             root.step = "create";
             setRange("2026-11-01", "2026-11-15");
-            setManagerStart("2026-11-08");
-            // Through the manager window: a bad time range is rejected locally, then a valid save.
+            setWeek("2026-11-09");
+            // Through the week window: a bad time range is rejected locally, then a valid save.
             manager.newEvent("2026-11-09");
             root.check(manager.visible && manager.formOpen && manager.editingUid === "", "new event opens an empty form");
             manager.fillForm({title: "測試事項", date: "2026-11-09", startMin: 660, endMin: 600});
@@ -42,17 +42,19 @@ ShellRoot {
         interval: 100; running: true; repeat: true
         onTriggered: {
             const day = calendar.eventsByDay["2026-11-09"];
-            if (root.step.startsWith("created:") && day && calendar.managerEvents.length === 1) {
+            const week = calendar.weekEvents["2026-11-09"];
+            if (root.step.startsWith("created:") && day && week && week.length === 1) {
                 const event = day[0];
                 root.check(event.title === "測試事項" && event.startMin === 600 && !event.readOnly,
                     "created event appears in the sidebar range");
                 root.check(calendar.markedDays["2026-11-09"] === true && !calendar.markedDays["2026-11-08"],
                     "days with events are marked");
-                root.check(calendar.managerEvents[0].uid === event.uid, "manager list shows the local event");
+                root.check(week[0].uid === event.uid && week[0].calendar === "local", "week view shows the local event");
+                root.check(manager.weekStart === "2026-11-09", "new event opens its week");
                 root.check(!manager.formOpen, "saving closes the form");
                 root.step = "deleting";
                 calendar.remove(event.uid);
-            } else if (root.step === "deleted" && !day && calendar.managerEvents.length === 0) {
+            } else if (root.step === "deleted" && !day && !week) {
                 root.check(Object.keys(calendar.markedDays).length === 0, "deleting clears the marks");
                 root.step = "done";
                 root.finish();

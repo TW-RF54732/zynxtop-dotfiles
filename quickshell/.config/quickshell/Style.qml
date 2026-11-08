@@ -77,10 +77,33 @@ QtObject {
         readonly property int padding: 24
     }
 
+    // App layer: windows you sit in and work with (the calendar week view), as opposed to the
+    // shell layer above. Glass sidebar + solid content, proportional UI face, mono for numbers.
+    readonly property var app: QtObject {
+        readonly property string uiFamily: "Noto Sans CJK TC"
+        readonly property color glass: "#80111318"
+        readonly property color surface: "#17191E"
+        readonly property color raised: "#1F2229"
+        readonly property color raisedBorder: "#30343D"
+        readonly property color line: "#23262D"
+        readonly property color hover: "#12FFFFFF"
+        readonly property color todayTint: "#06FFFFFF"
+        readonly property int contentRadius: 10
+        readonly property int cardRadius: 10
+        readonly property int eventRadius: 6
+        // Low-saturation calendar source tints; the local calendar always takes the first.
+        readonly property var sourceColors: ["#8FA7CC", "#C9AD88", "#95B690", "#B79AC0", "#8DB5B3", "#C4969B"]
+    }
+
     readonly property var calendarWindow: QtObject {
-        readonly property int width: 780
-        readonly property int height: 560
-        readonly property int sidebarWidth: 270
+        readonly property int width: 1120
+        readonly property int height: 740
+        readonly property int sidebarWidth: 212
+        readonly property int titleBarHeight: 52
+        readonly property int hourHeight: 46
+        readonly property int gutterWidth: 52
+        readonly property int editorWidth: 312
+        readonly property int snapMinutes: 15
     }
 
     readonly property var inputMethod: QtObject {

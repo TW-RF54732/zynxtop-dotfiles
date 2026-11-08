@@ -34,7 +34,8 @@ Key rules:
 
 ## Design principles (owner's direction)
 
-- **Style**: calm, minimal, unified. One look across all panels: Kitty `#111318` glass base, One Dark grays, monochrome `MonoIcon`/`MonoText`, small radius. Do not introduce colorful or inconsistent elements.
+- **Style**: calm, minimal, unified. One look across all shell panels: Kitty `#111318` glass base, One Dark grays, monochrome `MonoIcon`/`MonoText`, small radius. Do not introduce colorful or inconsistent elements.
+- **Two layers**: the *shell layer* (Top Bar, Launcher, notifications, Dashboard, Sidebar, OSD — things that float over your work) uses the look above. The *app layer* (windows you sit in and work with; currently `CalendarWindow`) uses `Style.app`: translucent glass sidebar + solid `#17191E` content, proportional `Noto Sans CJK TC` for text with JetBrains Mono only for times/numbers, 1px borders, sentence-style forms without field labels, one filled primary button per card. Colour is still monochrome except low-saturation calendar source tints (`Style.app.sourceColors`). Both layers share the One Dark grays and white as the emphasis colour.
 - **Top Bar is for focus only**: it permanently shows just the clock, the focused window title, and workspaces (plus transient OSD/notifications). Anything rarely used or visually unpredictable must not go there. Do not add tray icons, power buttons, system stats, or decorative widgets to it.
 - **Dashboard is for system status and control**: it is pulled down on demand and holds system info, media/audio, tray, and power. Infrequent controls belong here, not in the Top Bar.
 - **Tray**: third-party icons cannot be styled consistently and their count varies, so keep them only in the Dashboard as small (18px) icons inside the flyout card (`dashboard/TrayPanel.qml`); show nothing but a muted `EMPTY` when there are none.
