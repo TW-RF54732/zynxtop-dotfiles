@@ -21,3 +21,27 @@ and local script paths. Wallpaper images and local scripts are not included.
 The [Settings Center project](archives/settings-center/README.md) is archived:
 its source and original plan are preserved for reference only. It is not in use
 and is not part of the Stow packages installed above.
+
+## SDDM login theme
+
+`sddm/theme/` is a standalone QML greeter theme (`lolleo`) in the Quickshell
+app-layer style: sharp wallpaper, one solid card, Chinese labels. Install with
+root; it writes `/etc/sddm.conf.d/theme.conf` and generates the background from
+your wallpaper (override with `WALLPAPER=/path/to.jpg`):
+
+```sh
+sudo ./sddm/install.sh
+```
+
+Preview without root (uses `xcb`; Qt on Wayland renders opaque windows in
+16-bit, which tints dark colours green):
+
+```sh
+./sddm/preview.sh
+```
+
+## Lock screen and idle
+
+`hypr/` also carries `hyprlock.conf` and `hypridle.conf`. `hypridle` starts with
+Hyprland, locks after 5 minutes idle and turns the screen off after 5.5.
+`Super+L` locks immediately.
