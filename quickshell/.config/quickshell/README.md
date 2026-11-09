@@ -358,7 +358,10 @@ sudo pacman -S vdirsyncer python-icalendar python-recurring-ical-events python-x
 - 週視圖：七欄 24 小時時間格，重疊事項並排、全天事項在頂端；今天欄有底色與現在時間指針。點空白處建立一小時事項（對齊半點），拖曳可直接拉出長度（15 分鐘一格）；點全天列建立全天事項。有卡片開著時，點空白處只會關閉卡片。
 - 事項卡（句子表單）：大字標題，下面每一行是一句可以點的內容，沒有欄位標籤。日期點開小月曆、滾輪 ±1 天；時間滾輪 ±15 分鐘或點擊直接輸入（`930`、`9:30`、`15`），調整開始時間時結束時間跟著平移；重複是會循環的詞（不重複／每天／每週二／每月 10 號／每年 11/10）；地點、備註留空時顯示灰字。只有「儲存」是實心按鈕，刪除直接執行不確認；`Enter` 儲存，`Esc` 依序取消輸入、關閉月曆、關閉卡片、關閉視窗。訂閱事項以同樣版面唯讀顯示。
 
+Launcher 中的 `Calendar`（可搜尋「月曆」、「日曆」、「行事曆」）會透過 IPC 開啟週視圖視窗；項目定義在 `quickshell` 套件的 `~/.local/share/applications/quickshell-calendar.desktop`。
+
 ```sh
+qs ipc call -- calendar show
 qs ipc call calendar toggle
 qs ipc call calendar newEvent 2026-11-08
 qs ipc call calendar showDate 2026-11-08

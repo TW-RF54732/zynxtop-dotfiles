@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Calendar
+Name[zh_TW]=月曆
+GenericName=Calendar
+Comment=Open the week-view calendar window
+Exec=qs ipc call -- calendar show
+Icon=x-office-calendar
+Terminal=false
+Categories=Office;Calendar;
+Keywords=calendar;月曆;日曆;行事曆;schedule;event;
+StartupNotify=false
+NoDisplay=false
