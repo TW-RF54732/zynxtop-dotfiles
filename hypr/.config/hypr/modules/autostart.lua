@@ -19,4 +19,5 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("qs -n -d")
     
     hl.exec_cmd("discord")
+    hl.exec_cmd("/usr/bin/gnome-keyring-daemon --start --components=secrets")
 end)
