@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../components"
-import "../calendar"
 import "Calendar.js" as Calendar
 
 // Right half of the agenda: a scrollable 24-hour day column with a now pointer.

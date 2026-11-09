@@ -2,12 +2,13 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import "components"
+import "app"
 import "services"
 
+// WireGuard window (app layer): glass sidebar with the tunnel list, solid content with the
+// selected tunnel or the sentence-style add form.
 FloatingWindow {
     id: root
 
@@ -15,43 +16,54 @@ FloatingWindow {
     required property WireGuardService wireguard
     property bool addMode: false
 
+    readonly property var statusNames: ({
+        CONNECTED: "已連線", DISCONNECTED: "未連線", CONNECTING: "連線中…",
+        DISCONNECTING: "中斷中…", FAILED: "失敗", CHECKING: "檢查中…", UNAVAILABLE: "無法取得"
+    })
+    readonly property string statusText: statusNames[wireguard.displayStatus] || wireguard.displayStatus
+    readonly property string actionText: {
+        if (wireguard.busy) return statusText;
+        if (wireguard.activeState === "active") return "中斷連線";
+        if (wireguard.activeState === "inactive" || wireguard.activeState === "failed") return "連線";
+        return "重試";
+    }
+
     title: "WireGuard"
     visible: false
-    implicitWidth: root.theme.wireguard.width
-    implicitHeight: root.theme.wireguard.height
+    implicitWidth: theme.wireguard.width
+    implicitHeight: theme.wireguard.height
     minimumSize: Qt.size(implicitWidth, implicitHeight)
     maximumSize: Qt.size(implicitWidth, implicitHeight)
     color: "transparent"
 
     function present() {
-        root.visible = true
-        root.minimized = false
-        root.wireguard.refresh()
+        visible = true;
+        minimized = false;
+        wireguard.refresh();
     }
-
     function dismiss() {
-        root.closeEditor()
-        root.visible = false
+        closeEditor();
+        visible = false;
     }
-
     function toggleVisibility() {
-        if (root.visible) dismiss()
-        else present()
+        if (visible) dismiss();
+        else present();
     }
-
     function openEditor() {
-        root.wireguard.addError = ""
-        tunnelName.text = ""
-        configInput.text = ""
-        root.addMode = true
-        Qt.callLater(() => tunnelName.forceActiveFocus())
+        wireguard.addError = "";
+        nameField.text = "";
+        configInput.text = "";
+        addMode = true;
+        Qt.callLater(() => nameField.focusInput());
     }
-
     function closeEditor() {
-        root.addMode = false
-        tunnelName.text = ""
-        configInput.text = ""
-        root.wireguard.addError = ""
+        addMode = false;
+        nameField.text = "";
+        configInput.text = "";
+        wireguard.addError = "";
+    }
+    function save() {
+        if (saveButton.interactive) wireguard.addConfiguration(nameField.text, configInput.text);
     }
 
     onVisibleChanged: wireguard.monitoring = visible
@@ -59,367 +71,295 @@ FloatingWindow {
 
     Connections {
         target: root.wireguard
-        function onConfigurationAdded() { root.closeEditor() }
+        function onConfigurationAdded() { root.closeEditor(); }
     }
 
     IpcHandler {
         target: "wireguard"
-        function show(): void { root.present() }
-        function hide(): void { root.dismiss() }
-        function toggle(): void { root.toggleVisibility() }
+        function show(): void { root.present(); }
+        function hide(): void { root.dismiss(); }
+        function toggle(): void { root.toggleVisibility(); }
     }
 
-    GlassFrame {
+    Item {
+        id: content
         anchors.fill: parent
-        theme: root.theme
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: root.theme.geometry.frameWidth
-            spacing: 0
+        // Glass: Hyprland blurs whatever shows through this translucent base.
+        Rectangle { anchors.fill: parent; color: root.theme.app.glass }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 18
-                Layout.rightMargin: 12
-                Layout.topMargin: 10
-                Layout.bottomMargin: 10
+        // ---- title bar ----
+        AppTitleBar {
+            id: titleBar
+            width: parent.width
+            theme: root.theme
+            title: "WireGuard"
+            subtitle: root.wireguard.profiles.length + " 個通道"
+            onMoveRequested: root.startSystemMove()
 
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: appTitle.implicitHeight
+            AppButton {
+                theme: root.theme
+                text: "關閉"
+                onClicked: root.dismiss()
+            }
+        }
 
-                    MonoText {
-                        id: appTitle
-                        theme: root.theme
-                        text: "WIREGUARD"
-                        font.pixelSize: 15
-                        font.bold: true
-                    }
+        // ---- glass sidebar: tunnels ----
+        Column {
+            id: sidebar
+            x: 16
+            y: titleBar.height + 4
+            width: root.theme.wireguard.sidebarWidth - 32
+            spacing: 2
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.SizeAllCursor
-                        onPressed: root.startSystemMove()
-                    }
-                }
+            SectionLabel {
+                theme: root.theme
+                text: "通道"
+            }
 
-                TextButton {
+            Repeater {
+                model: root.wireguard.profiles
+                ListRow {
+                    id: row
+                    required property string modelData
+                    width: sidebar.width
                     theme: root.theme
-                    text: "CLOSE"
-                    implicitHeight: 30
-                    onClicked: root.dismiss()
+                    text: modelData
+                    mono: true
+                    selected: !root.addMode && modelData === root.wireguard.selectedProfile
+                    onClicked: {
+                        root.closeEditor();
+                        root.wireguard.selectedProfile = modelData;
+                    }
+
+                    StatusDot {
+                        x: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        theme: root.theme
+                        on: row.modelData === root.wireguard.selectedProfile && root.wireguard.connected
+                    }
                 }
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: 1
-                color: root.theme.colors.separator
+            Item { width: 1; height: 6 }
+
+            ListRow {
+                width: sidebar.width
+                theme: root.theme
+                text: "＋ 新增通道"
+                textX: 8
+                muted: true
+                selected: root.addMode
+                interactive: !root.wireguard.busy && !root.wireguard.adding
+                onClicked: root.openEditor()
             }
+        }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 0
+        // ---- solid content ----
+        ContentSurface {
+            id: main
+            theme: root.theme
+            x: root.theme.wireguard.sidebarWidth
+            y: titleBar.height
+            width: parent.width - x
+            height: parent.height - y
 
-                ColumnLayout {
-                    Layout.preferredWidth: root.theme.wireguard.sidebarWidth
-                    Layout.fillHeight: true
-                    spacing: 0
+            // Selected tunnel.
+            Item {
+                anchors.fill: parent
+                anchors.margins: root.theme.wireguard.padding
+                visible: !root.addMode
 
-                    MonoText {
-                        theme: root.theme
-                        Layout.leftMargin: 16
-                        Layout.topMargin: 16
-                        Layout.bottomMargin: 8
-                        text: "TUNNELS"
-                        tone: root.theme.colors.textMuted
-                        font.pixelSize: 11
-                    }
-
-                    ListView {
-                        id: tunnelList
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        model: root.wireguard.profiles
-                        currentIndex: Math.max(0,
-                            root.wireguard.profiles.indexOf(root.wireguard.selectedProfile))
-
-                        delegate: InteractiveSurface {
-                            id: tunnelRow
-                            required property string modelData
-                            required property int index
-                            width: tunnelList.width
-                            height: 48
-                            theme: root.theme
-                            active: index === tunnelList.currentIndex
-                            onClicked: root.wireguard.selectedProfile = modelData
-
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 14
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: tunnelRow.active && root.wireguard.connected
-                                    ? root.theme.colors.textPrimary : root.theme.colors.textMuted
-                            }
-
-                            MonoText {
-                                theme: root.theme
-                                anchors.left: parent.left
-                                anchors.leftMargin: 34
-                                anchors.right: parent.right
-                                anchors.rightMargin: 12
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: tunnelRow.modelData
-                                tone: tunnelRow.active
-                                    ? root.theme.colors.textPrimary : root.theme.colors.textSecondary
-                                font.pixelSize: 13
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 1
-                        color: root.theme.colors.separator
-                    }
-
-                    TextButton {
-                        theme: root.theme
-                        Layout.fillWidth: true
-                        Layout.margins: 10
-                        implicitHeight: 38
-                        text: "+  ADD TUNNEL"
-                        active: root.addMode
-                        interactive: !root.wireguard.busy && !root.wireguard.adding
-                        onClicked: root.openEditor()
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillHeight: true
-                    implicitWidth: 1
-                    color: root.theme.colors.separator
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.margins: 24
+                Column {
+                    id: detail
+                    width: parent.width
                     spacing: 14
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        visible: !root.addMode
-                        spacing: 14
-
-                        RowLayout {
-                            Layout.fillWidth: true
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 3
-
-                                MonoText {
-                                    theme: root.theme
-                                    text: root.wireguard.selectedProfile
-                                    font.pixelSize: 22
-                                    font.bold: true
-                                }
-                                MonoText {
-                                    theme: root.theme
-                                    text: "WireGuard tunnel"
-                                    tone: root.theme.colors.textMuted
-                                    font.pixelSize: 11
-                                }
-                            }
-
-                            Rectangle {
-                                implicitWidth: statusText.implicitWidth + 22
-                                implicitHeight: 28
-                                radius: root.theme.geometry.cornerRadius
-                                color: root.theme.colors.frame
-
-                                MonoText {
-                                    id: statusText
-                                    anchors.centerIn: parent
-                                    theme: root.theme
-                                    text: root.wireguard.displayStatus
-                                    tone: root.wireguard.connected
-                                        ? root.theme.colors.textPrimary : root.theme.colors.textSecondary
-                                    font.pixelSize: 11
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: 1
-                            color: root.theme.colors.separator
-                        }
-
-                        MonoText {
+                    Row {
+                        spacing: 12
+                        UiText {
+                            id: profileTitle
                             theme: root.theme
-                            text: "STATUS"
-                            tone: root.theme.colors.textMuted
-                            font.pixelSize: 11
+                            text: root.wireguard.selectedProfile
+                            mono: true
+                            font.pixelSize: root.theme.app.titleSize + 3
+                            font.bold: true
+                            color: root.theme.colors.textPrimary
                         }
-
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 2
-                            columnSpacing: 20
-                            rowSpacing: 8
-
-                            MonoText { theme: root.theme; text: "Interface"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
-                            MonoText { theme: root.theme; text: root.wireguard.selectedProfile; font.pixelSize: 12 }
-                            MonoText { theme: root.theme; text: "State"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
-                            MonoText { theme: root.theme; text: root.wireguard.displayStatus; font.pixelSize: 12 }
-                            MonoText { theme: root.theme; text: "Service"; tone: root.theme.colors.textMuted; font.pixelSize: 12 }
-                            MonoText { theme: root.theme; text: root.wireguard.unitName(root.wireguard.selectedProfile); font.pixelSize: 12 }
+                        Row {
+                            anchors.verticalCenter: profileTitle.verticalCenter
+                            spacing: 6
+                            StatusDot {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 7; height: 7
+                                theme: root.theme
+                                on: root.wireguard.connected
+                            }
+                            UiText {
+                                theme: root.theme
+                                text: root.statusText
+                                font.pixelSize: 12
+                                color: root.wireguard.connected
+                                    ? root.theme.colors.textPrimary : root.theme.colors.textMuted
+                            }
                         }
                     }
 
-                    ScrollView {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        visible: !root.addMode && root.wireguard.error !== ""
-                        clip: true
+                    Rectangle { width: parent.width; height: 1; color: root.theme.app.line }
 
-                        MonoText {
+                    Grid {
+                        columns: 2
+                        columnSpacing: 18
+                        rowSpacing: 8
+                        Repeater {
+                            model: [
+                                "介面", root.wireguard.selectedProfile,
+                                "服務", root.wireguard.unitName(root.wireguard.selectedProfile),
+                                "設定檔", "/etc/wireguard/" + root.wireguard.selectedProfile + ".conf"
+                            ]
+                            UiText {
+                                required property string modelData
+                                required property int index
+                                theme: root.theme
+                                text: modelData
+                                mono: index % 2 === 1
+                                font.pixelSize: 12
+                                color: index % 2 === 0 ? root.theme.colors.textMuted : root.theme.colors.textSecondary
+                            }
+                        }
+                    }
+                }
+
+                // systemctl status output when the service fails.
+                AppCard {
+                    anchors.top: detail.bottom
+                    anchors.topMargin: 18
+                    anchors.bottom: actionRow.top
+                    anchors.bottomMargin: 18
+                    width: parent.width
+                    visible: root.wireguard.error !== ""
+                    theme: root.theme
+                    radius: root.theme.app.eventRadius
+
+                    ScrollView {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        clip: true
+                        UiText {
                             theme: root.theme
-                            width: parent.width
+                            width: main.width - 2 * root.theme.wireguard.padding - 24
                             text: root.wireguard.error
-                            tone: root.theme.colors.textSecondary
+                            mono: true
                             font.pixelSize: 11
+                            lineHeight: 1.25
                             wrapMode: Text.Wrap
                         }
                     }
+                }
 
-                    Item {
-                        Layout.fillHeight: true
-                        visible: !root.addMode && root.wireguard.error === ""
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: !root.addMode
-
-                        Item { Layout.fillWidth: true }
-                        TextButton {
-                            theme: root.theme
-                            implicitWidth: 150
-                            implicitHeight: 42
-                            text: root.wireguard.connected ? "DEACTIVATE" : "ACTIVATE"
-                            active: root.wireguard.connected
-                            interactive: !root.wireguard.busy && !root.wireguard.adding
-                            onClicked: root.wireguard.toggle()
-                        }
-                    }
-
-                    MonoText {
+                Item {
+                    id: actionRow
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    height: 30
+                    UiText {
                         theme: root.theme
-                        Layout.fillWidth: true
-                        visible: root.addMode
-                        text: "ADD EMPTY TUNNEL"
-                        font.pixelSize: 20
-                        font.bold: true
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        visible: root.addMode
-                        spacing: 6
-
-                        MonoText { theme: root.theme; text: "NAME"; tone: root.theme.colors.textMuted; font.pixelSize: 11 }
-                        TextField {
-                            id: tunnelName
-                            Layout.fillWidth: true
-                            implicitHeight: 38
-                            color: root.theme.colors.textPrimary
-                            selectionColor: root.theme.colors.textSelection
-                            selectedTextColor: root.theme.colors.textPrimary
-                            font.family: root.theme.typography.family
-                            font.pixelSize: 13
-                            placeholderText: "home, office, wg0…"
-                            placeholderTextColor: root.theme.colors.textMuted
-                            leftPadding: 10
-                            rightPadding: 10
-                            background: Rectangle {
-                                color: root.theme.colors.frame
-                                radius: root.theme.geometry.cornerRadius
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        visible: root.addMode
-                        spacing: 6
-
-                        MonoText { theme: root.theme; text: "CONFIGURATION"; tone: root.theme.colors.textMuted; font.pixelSize: 11 }
-                        ScrollView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
-
-                            TextArea {
-                                id: configInput
-                                color: root.theme.colors.textPrimary
-                                selectionColor: root.theme.colors.textSelection
-                                selectedTextColor: root.theme.colors.textPrimary
-                                font.family: root.theme.typography.family
-                                font.pixelSize: 12
-                                wrapMode: TextEdit.NoWrap
-                                placeholderText: "[Interface]\nPrivateKey = …\nAddress = …\n\n[Peer]\nPublicKey = …"
-                                placeholderTextColor: root.theme.colors.textMuted
-                                padding: 12
-                                background: Rectangle {
-                                    color: root.theme.colors.frame
-                                    radius: root.theme.geometry.cornerRadius
-                                }
-                            }
-                        }
-                    }
-
-                    MonoText {
-                        theme: root.theme
-                        Layout.fillWidth: true
-                        visible: root.addMode
-                        text: root.wireguard.addError || "Only paste trusted configs; wg-quick hooks run as root."
-                        tone: root.theme.colors.textSecondary
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "透過 PolicyKit 驗證，不改變開機啟用狀態"
                         font.pixelSize: 11
-                        wrapMode: Text.Wrap
+                        color: root.theme.colors.textMuted
                     }
+                    AppButton {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        theme: root.theme
+                        primary: true
+                        text: root.actionText
+                        interactive: !root.wireguard.busy && !root.wireguard.adding
+                        onClicked: root.wireguard.toggle()
+                    }
+                }
+            }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: root.addMode
+            // Add form: sentence-style, no field labels; placeholders name the fields.
+            Item {
+                anchors.fill: parent
+                anchors.margins: root.theme.wireguard.padding
+                visible: root.addMode
 
-                        Item { Layout.fillWidth: true }
-                        TextButton {
+                Column {
+                    id: formHead
+                    width: parent.width
+                    spacing: 16
+                    UiText {
+                        theme: root.theme
+                        text: "新增通道"
+                        font.pixelSize: root.theme.app.titleSize
+                        font.bold: true
+                        color: root.theme.colors.textPrimary
+                    }
+                    LineField {
+                        id: nameField
+                        theme: root.theme
+                        width: parent.width
+                        mono: true
+                        placeholder: "名稱：home、office、wg0…"
+                        alwaysUnderline: true
+                        onAccepted: configInput.focusInput()
+                    }
+                }
+
+                TextBox {
+                    id: configInput
+                    anchors.top: formHead.bottom
+                    anchors.topMargin: 18
+                    anchors.bottom: formFoot.top
+                    anchors.bottomMargin: 14
+                    width: parent.width
+                    theme: root.theme
+                    placeholder: "貼上完整的 wg-quick 設定\n\n[Interface]\nPrivateKey = …\nAddress = …\n\n[Peer]\nPublicKey = …"
+                }
+
+                Column {
+                    id: formFoot
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    spacing: 12
+                    UiText {
+                        theme: root.theme
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        font.pixelSize: 11
+                        lineHeight: 1.25
+                        text: root.wireguard.addError
+                            || "只貼上可信任的設定：PreUp／PostUp 等 hook 會由 wg-quick 以 root 執行。"
+                        color: root.wireguard.addError ? root.theme.colors.textPrimary : root.theme.colors.textMuted
+                    }
+                    Rectangle { width: parent.width; height: 1; color: root.theme.app.raisedBorder }
+                    Row {
+                        anchors.right: parent.right
+                        spacing: 10
+                        UiText {
                             theme: root.theme
-                            text: "CANCEL"
-                            implicitHeight: 40
-                            onClicked: root.closeEditor()
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Esc 取消"
+                            font.pixelSize: 11
+                            color: root.theme.colors.textMuted
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.closeEditor()
+                            }
                         }
-                        TextButton {
+                        AppButton {
+                            id: saveButton
                             theme: root.theme
-                            text: root.wireguard.adding ? "SAVING…" : "SAVE"
-                            implicitWidth: 110
-                            implicitHeight: 40
-                            active: true
+                            primary: true
+                            text: root.wireguard.adding ? "儲存中…" : "儲存"
                             interactive: !root.wireguard.adding
-                                && tunnelName.text.trim().length > 0
+                                && nameField.text.trim().length > 0
                                 && configInput.text.trim().length > 0
-                            onClicked: root.wireguard.addConfiguration(tunnelName.text, configInput.text)
+                            onClicked: root.save()
                         }
                     }
                 }
@@ -430,5 +370,10 @@ FloatingWindow {
     Shortcut {
         sequence: "Escape"
         onActivated: root.addMode ? root.closeEditor() : root.dismiss()
+    }
+    Shortcut {
+        sequence: "Ctrl+Return"
+        enabled: root.addMode
+        onActivated: root.save()
     }
 }

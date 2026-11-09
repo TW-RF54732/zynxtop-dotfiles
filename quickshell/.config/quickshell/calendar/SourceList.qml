@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // Calendar sources in the window sidebar: tint swatch, name, error mark. Subscriptions open
@@ -26,25 +27,25 @@ Column {
 
     spacing: 2
 
-    UiText {
+    SectionLabel {
         theme: root.theme
         text: "日曆"
-        font.pixelSize: 11
-        color: root.theme.colors.textMuted
-        bottomPadding: 4
     }
 
     Repeater {
         model: root.entries
-        Rectangle {
+        ListRow {
             id: row
             required property var modelData
             readonly property var subscription: modelData.subscription
             width: root.width
-            height: 28
-            radius: root.theme.app.eventRadius
-            color: (rowMouse.containsMouse && subscription) || root.selectedId === modelData.id
-                ? root.theme.app.hover : "transparent"
+            theme: root.theme
+            text: modelData.name
+            detail: subscription && subscription.error ? "錯誤" : ""
+            selected: root.selectedId === modelData.id
+            clickable: subscription !== null
+            textColor: modelData.id === "local" ? root.theme.colors.textPrimary : root.theme.colors.textSecondary
+            onClicked: root.subscriptionActivated(modelData.id, row)
 
             Rectangle {
                 x: 8
@@ -53,59 +54,21 @@ Column {
                 radius: 3
                 color: Calendar.sourceColor(row.modelData.id, root.theme.app.sourceColors)
             }
-            UiText {
-                theme: root.theme
-                x: 26
-                width: parent.width - x - errorMark.width - 12
-                anchors.verticalCenter: parent.verticalCenter
-                text: row.modelData.name
-                elide: Text.ElideRight
-                color: row.modelData.id === "local" ? root.theme.colors.textPrimary : root.theme.colors.textSecondary
-            }
-            UiText {
-                id: errorMark
-                theme: root.theme
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                text: row.subscription && row.subscription.error ? "錯誤" : ""
-                font.pixelSize: 11
-                color: root.theme.colors.textMuted
-            }
-            MouseArea {
-                id: rowMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                enabled: row.subscription !== null
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.subscriptionActivated(row.modelData.id, row)
-            }
         }
     }
 
     Item { width: 1; height: 6 }
 
-    Rectangle {
+    ListRow {
         id: addRow
+        objectName: "calendarAddSubscription"
         width: root.width
-        height: 28
-        radius: root.theme.app.eventRadius
-        color: addMouse.containsMouse || root.selectedId === "add" ? root.theme.app.hover : "transparent"
-        UiText {
-            theme: root.theme
-            x: 8
-            anchors.verticalCenter: parent.verticalCenter
-            text: "＋ 加入訂閱"
-            color: addMouse.containsMouse ? root.theme.colors.textPrimary : root.theme.colors.textMuted
-        }
-        MouseArea {
-            id: addMouse
-            objectName: "calendarAddSubscription"
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.addRequested(addRow)
-        }
+        theme: root.theme
+        text: "＋ 加入訂閱"
+        textX: 8
+        muted: true
+        selected: root.selectedId === "add"
+        onClicked: root.addRequested(addRow)
     }
     UiText {
         theme: root.theme

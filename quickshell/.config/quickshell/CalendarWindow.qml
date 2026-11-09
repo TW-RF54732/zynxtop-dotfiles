@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "app"
 import "calendar"
 import "sidebar/Calendar.js" as Calendar
 
@@ -203,71 +204,43 @@ FloatingWindow {
         Rectangle { anchors.fill: parent; color: root.theme.app.glass }
 
         // ---- title bar ----
-        Item {
+        AppTitleBar {
             id: titleBar
             width: parent.width
-            height: root.theme.calendarWindow.titleBarHeight
+            theme: root.theme
+            title: Calendar.weekTitle(root.weekStart)
+            subtitle: "第 " + Calendar.isoWeek(root.weekStart) + " 週"
+            onMoveRequested: root.startSystemMove()
+            onDoubleClicked: root.showWeek(Calendar.weekStart(root.todayKey))
 
-            MouseArea {
-                anchors.fill: parent
-                onPressed: root.startSystemMove()
-                onDoubleClicked: root.showWeek(Calendar.weekStart(root.todayKey))
+            AppButton {
+                theme: root.theme
+                text: "‹"
+                onClicked: root.showWeek(Calendar.addDays(root.weekStart, -7))
             }
-            Row {
-                x: 22
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 12
-                UiText {
-                    theme: root.theme
-                    anchors.baseline: weekNumber.baseline
-                    text: Calendar.weekTitle(root.weekStart)
-                    font.pixelSize: 17
-                    font.bold: true
-                    color: root.theme.colors.textPrimary
-                }
-                UiText {
-                    id: weekNumber
-                    theme: root.theme
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "第 " + Calendar.isoWeek(root.weekStart) + " 週"
-                    font.pixelSize: 12
-                    color: root.theme.colors.textMuted
+            AppButton {
+                theme: root.theme
+                text: "今天"
+                onClicked: {
+                    root.showWeek(Calendar.weekStart(root.todayKey));
+                    grid.scrollToStart();
                 }
             }
-            Row {
-                anchors.right: parent.right
-                anchors.rightMargin: 14
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                AppButton {
-                    theme: root.theme
-                    text: "‹"
-                    onClicked: root.showWeek(Calendar.addDays(root.weekStart, -7))
-                }
-                AppButton {
-                    theme: root.theme
-                    text: "今天"
-                    onClicked: {
-                        root.showWeek(Calendar.weekStart(root.todayKey));
-                        grid.scrollToStart();
-                    }
-                }
-                AppButton {
-                    theme: root.theme
-                    text: "›"
-                    onClicked: root.showWeek(Calendar.addDays(root.weekStart, 7))
-                }
-                Item { width: 10; height: 1 }
-                AppButton {
-                    objectName: "calendarAddButton"
-                    theme: root.theme
-                    primary: true
-                    text: "＋ 新增"
-                    interactive: root.calendar.available
-                    onClicked: {
-                        const today = Calendar.weekStart(root.todayKey) === root.weekStart;
-                        root.newEvent(today ? root.todayKey : root.weekStart);
-                    }
+            AppButton {
+                theme: root.theme
+                text: "›"
+                onClicked: root.showWeek(Calendar.addDays(root.weekStart, 7))
+            }
+            Item { width: 10; height: 1 }
+            AppButton {
+                objectName: "calendarAddButton"
+                theme: root.theme
+                primary: true
+                text: "＋ 新增"
+                interactive: root.calendar.available
+                onClicked: {
+                    const today = Calendar.weekStart(root.todayKey) === root.weekStart;
+                    root.newEvent(today ? root.todayKey : root.weekStart);
                 }
             }
         }
@@ -312,14 +285,13 @@ FloatingWindow {
         }
 
         // ---- solid content: the week ----
-        Rectangle {
+        ContentSurface {
             id: main
+            theme: root.theme
             x: root.theme.calendarWindow.sidebarWidth
             y: titleBar.height
             width: parent.width - x
             height: parent.height - y
-            color: root.theme.app.surface
-            topLeftRadius: root.theme.app.contentRadius
 
             UiText {
                 anchors.centerIn: parent

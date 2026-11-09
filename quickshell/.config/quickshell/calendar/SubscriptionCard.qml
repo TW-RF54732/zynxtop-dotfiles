@@ -1,12 +1,12 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // Card next to the sources list: add an ICS subscription, or show one with sync and remove.
-Rectangle {
+AppCard {
     id: root
     objectName: "calendarSubscriptionCard"
-    required property var theme
     property bool adding: false
     property var subscription: null
     property bool syncing: false
@@ -29,10 +29,6 @@ Rectangle {
 
     width: theme.calendarWindow.editorWidth
     height: (adding ? addBody.implicitHeight : detailBody.implicitHeight) + 32
-    radius: theme.app.cardRadius
-    color: theme.app.raised
-    border.width: 1
-    border.color: theme.app.raisedBorder
 
     MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }
 

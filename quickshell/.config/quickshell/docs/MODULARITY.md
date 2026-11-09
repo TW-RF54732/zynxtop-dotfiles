@@ -110,7 +110,8 @@ Wayland 實機仍需確認焦點、點擊外部關閉、動畫、長清單捲動
 - `sidebar/` 組裝個人卡、月曆、日程（`AgendaPanel` = `AgendaList` | `AgendaTimeline`）、事項詳情卡片 `EventFlyout` 及現有通知中心。小工具由呼叫端提供 Component 與明確服務注入，不自行發現或下載外掛。
 - `UserService` 暴露 `displayName`、`avatar`，以一次性 Python 程序讀取目前帳號及本地頭像；`CompositorService.focusedMonitor` 暴露目前焦點螢幕。
 - `Calendar.js` 用 UTC 日期運算產生週一開始的 42 格月曆，今天的欄位來自既有 ClockService 的 UTC wall-clock Date；不要再對 displayDate 套一次 UTC 轉換。`Calendar.layoutDay()` 是時間軸重疊分欄的純函式；週、日期鍵、重複規則文字與來源色（`sourceColor`）也在 `Calendar.js`。
-- `calendar/` 是週視圖視窗的功能元件（app 層外觀，見 CLAUDE.md）：`WeekGrid`（週格與拖曳建立，發出 `eventActivated(event, rect)`、`slotRequested(date, start, end, allDay, rect)`）、`EventEditor`（句子表單，`fill(event)`／`collect()`；側欄用 `Style.shellForms` 這個主題變體套上 shell 外觀）、`SubscriptionCard`、`SourceList`、`MiniMonth`，以及 `UiText`、`LineField`、`Token`、`TimeToken`、`AppButton`、`EventBlock`、`DashedBox` 小元件。
+- `app/` 是 app 層設計語言的共用元件（玻璃側欄＋實心內容，見 CLAUDE.md），只依賴注入的 `theme`（`Style.app`），不含任何功能邏輯；新的 app 視窗應由這些元件組成：`AppTitleBar`（粗體標題＋灰色副標，子元件放右側動作，發出 `moveRequested`、`doubleClicked`）、`ContentSurface`（左上圓角的實心內容區）、`SectionLabel`、`ListRow`（側欄列表列；前置標記以子元件放在 x≈8，`muted` 為「＋ …」新增列樣式，`detail` 為右側灰字）、`StatusDot`、`AppCard`（凸起卡片＋1px 邊框）、`AppButton`（`primary` 為每張卡唯一的填色動作）、`UiText`、`LineField`（提示字即標籤）、`TextBox`（多行等寬輸入）、`Token`、`DashedBox`。
+- `calendar/` 是週視圖視窗的功能元件（由 `app/` 組成）：`WeekGrid`（週格與拖曳建立，發出 `eventActivated(event, rect)`、`slotRequested(date, start, end, allDay, rect)`）、`EventEditor`（句子表單，`fill(event)`／`collect()`；側欄用 `Style.shellForms` 這個主題變體套上 shell 外觀）、`SubscriptionCard`、`SourceList`、`MiniMonth`、`TimeToken`、`EventBlock`。
 - `CalendarService`（`JsonProcessService`）連接常駐的 `services/calendar_backend.py`（JSON lines：`range`、`get`、`create`、`update`、`delete`、`subscriptions`、`subscribe`、`unsubscribe`、`sync`），暴露 `eventsByDay`、`markedDays`、`weekEvents`（`setWeek(monday)`，所有日曆）、`calendars`、`subscriptions`、`syncing`、`available`。後端輸出的時間已換算為台北牆上時間（日期字串 + 分鐘數），QML 不做時區運算。
 
 

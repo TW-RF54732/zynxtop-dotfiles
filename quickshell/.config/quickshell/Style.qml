@@ -73,12 +73,13 @@ QtObject {
     readonly property var wireguard: QtObject {
         readonly property int width: 760
         readonly property int height: 500
-        readonly property int sidebarWidth: 210
-        readonly property int padding: 24
+        readonly property int sidebarWidth: 200
+        readonly property int padding: 28
     }
 
     // App layer: windows you sit in and work with (the calendar week view), as opposed to the
     // shell layer above. Glass sidebar + solid content, proportional UI face, mono for numbers.
+    // Drawn by the shared primitives in app/.
     readonly property var app: QtObject {
         readonly property string uiFamily: "Noto Sans CJK TC"
         readonly property color glass: "#80111318"
@@ -96,6 +97,7 @@ QtObject {
         readonly property int cardRadius: 10
         readonly property int eventRadius: 6
         readonly property int titleSize: 19
+        readonly property int titleBarHeight: 52
         // Low-saturation calendar source tints; the local calendar always takes the first.
         readonly property var sourceColors: ["#8FA7CC", "#C9AD88", "#95B690", "#B79AC0", "#8DB5B3", "#C4969B"]
     }
@@ -125,6 +127,7 @@ QtObject {
             readonly property int cardRadius: root.geometry.cornerRadius
             readonly property int eventRadius: root.geometry.cornerRadius
             readonly property int titleSize: 16
+            readonly property int titleBarHeight: 52
             readonly property var sourceColors: [root.colors.textSecondary]
         }
     }
@@ -133,7 +136,7 @@ QtObject {
         readonly property int width: 1120
         readonly property int height: 740
         readonly property int sidebarWidth: 212
-        readonly property int titleBarHeight: 52
+        readonly property int titleBarHeight: root.app.titleBarHeight
         readonly property int hourHeight: 46
         readonly property int gutterWidth: 52
         readonly property int editorWidth: 312

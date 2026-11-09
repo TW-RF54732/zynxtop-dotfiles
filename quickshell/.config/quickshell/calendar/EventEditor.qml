@@ -1,14 +1,14 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // Sentence-style event card: a large title and one line per property, no field labels.
 // Date/time/repeat are tokens (click or wheel); moving the start keeps the duration.
 // Read-only events (subscriptions) show the same layout without editing.
-Rectangle {
+AppCard {
     id: root
     objectName: "calendarEventEditor"
-    required property var theme
     required property string todayKey
     property bool readOnly: false
     property bool editing: false
@@ -82,10 +82,6 @@ Rectangle {
 
     width: theme.calendarWindow.editorWidth
     height: body.implicitHeight + 32
-    radius: theme.app.cardRadius
-    color: theme.app.raised
-    border.width: 1
-    border.color: theme.app.cardBorder
 
     // Clicks inside the card stay in the card.
     MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }

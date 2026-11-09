@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // Compact month grid: the window sidebar's week navigator and the editor's date picker.

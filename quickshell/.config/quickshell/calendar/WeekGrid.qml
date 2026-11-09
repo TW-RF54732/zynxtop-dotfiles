@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // Week view: day header, all-day strip and a scrollable 24-hour grid of seven day columns.

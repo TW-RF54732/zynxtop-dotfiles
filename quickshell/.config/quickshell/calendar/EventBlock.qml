@@ -1,4 +1,5 @@
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // One event in the week grid, filled with its calendar's low-saturation tint.

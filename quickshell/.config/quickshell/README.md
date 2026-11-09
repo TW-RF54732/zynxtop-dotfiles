@@ -219,7 +219,7 @@ Categories=Utility;
 
 Launcher 中的 `WireGuard` 項目會透過 IPC 開啟內建控制視窗。設定選單預設包含 `wg`，也會保存經由 GUI 新增的設定；每個設定可獨立顯示狀態及連線／斷線，因此可以同時啟用多個介面。
 
-視窗採用 WireGuard 官方桌面程式相近的雙欄結構：左側列出 tunnels，右側顯示選中項目的狀態、服務錯誤與 Activate／Deactivate 操作。`ADD TUNNEL` 提供名稱欄及多行設定框，可直接貼上完整的 `wg-quick` `.conf`；名稱同時作為 Linux 介面與 `/etc/wireguard/<name>.conf` 檔名，長度限制為 15 個合法介面字元。
+視窗屬於 app 層外觀，與週視圖行事曆一致：玻璃側欄＋實心內容，介面字用 Noto Sans CJK TC，介面名稱、服務與設定內容用 JetBrains Mono。左側側欄列出通道（實心圓點表示已連線），右側顯示選中通道的狀態、介面／服務／設定檔路徑、服務錯誤，以及唯一的填色按鈕「連線／中斷連線」。側欄的「＋ 新增通道」在右側開啟句子式表單：名稱欄不另設標籤（提示字即標籤），下方多行框可直接貼上完整的 `wg-quick` `.conf`，`Ctrl+Enter` 或「儲存」送出，`Esc` 取消；名稱同時作為 Linux 介面與 `/etc/wireguard/<name>.conf` 檔名，長度限制為 15 個合法介面字元。
 
 新設定以 `0600` 暫存並經 PolicyKit 安裝至 `/etc/wireguard/`，PrivateKey 不會放入指令列或日誌。`PreUp`、`PostUp`、`PreDown`、`PostDown` 等 hook 會由 `wg-quick` 以 root 執行，因此只應貼上可信任的設定。服務啟動失敗時，右側會顯示 `systemctl status` 的實際錯誤，而不只顯示泛用失敗訊息。
 

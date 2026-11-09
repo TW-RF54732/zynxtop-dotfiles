@@ -1,4 +1,5 @@
 import QtQuick
+import "../app"
 import "../sidebar/Calendar.js" as Calendar
 
 // "HH:MM" token: wheel steps by the caller's snap; click to type ("930", "9:30", "15").
