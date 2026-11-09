@@ -40,8 +40,10 @@ Preview without root (uses `xcb`; Qt on Wayland renders opaque windows in
 ./sddm/preview.sh
 ```
 
-## Lock screen and idle
+## Lock screen
 
-`hypr/` also carries `hyprlock.conf` and `hypridle.conf`. `hypridle` starts with
-Hyprland, locks after 5 minutes idle and turns the screen off after 5.5.
-`Super+L` locks immediately.
+`hypr/` carries `hyprlock.conf`; `Super+L` locks the screen manually.
+
+`hypridle.conf` (idle lock after 5 minutes) is kept but not autostarted. To
+enable it, add `hl.exec_cmd("hypridle")` to `modules/autostart.lua`. Do not add
+`hl.dsp.dpms` to it: that dispatch crashes Hyprland 0.57.1.
