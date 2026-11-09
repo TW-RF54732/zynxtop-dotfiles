@@ -175,7 +175,6 @@ ShellRoot {
             testRoot.check(apps.score(testRoot.entries[0], "xyz") === -1, "unmatched search")
             testRoot.check(apps.score(testRoot.entries[0], "editor") === 180, "generic name rank")
             testRoot.check(apps.score(testRoot.entries[0], "code") === 100, "keyword rank")
-            testRoot.check(apps.normalizedAppId("org.Example-App.desktop") === "orgexampleapp", "tray id normalization")
             controller.showAllApplications()
             testRoot.check(controller.expanded && controller.results.length === 2, "Tab excludes hidden apps")
             testRoot.check(controller.results[0].app.id === "alpha", "equal usage sorts by name")

@@ -1,6 +1,5 @@
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.SystemTray
 
 Scope {
     FileView {
@@ -51,31 +50,6 @@ Scope {
         usageFile.counts = counts
     }
 
-    function normalizedAppId(value) {
-        return String(value || "")
-            .toLowerCase()
-            .replace(/\.desktop$/, "")
-            .replace(/[^a-z0-9]/g, "")
-    }
-
-    function activateTrayItem(entry) {
-        const appIds = [entry.id, entry.name, entry.startupClass, entry.icon]
-            .map(normalizedAppId)
-            .filter(value => value.length > 0)
-        const items = SystemTray.items.values
-
-        for (let i = 0; i < items.length; ++i) {
-            const item = items[i]
-            const trayIds = [item.id, item.title, item.icon, item.tooltipTitle]
-                .map(normalizedAppId)
-            if (trayIds.some(value => value.length > 0 && appIds.indexOf(value) >= 0)) {
-                item.activate()
-                return true
-            }
-        }
-        return false
-    }
-
     function search(query, showAll) {
         return rankEntries(DesktopEntries.applications.values, query, showAll)
     }
@@ -113,8 +87,10 @@ Scope {
 
     function launch(app) {
         recordLaunch(app)
-        if (!activateTrayItem(app))
-            app.execute()
+        // Always run the desktop entry. Single-instance apps (Steam, Electron)
+        // forward the new invocation to the running process, which reliably
+        // re-shows a window closed to the tray; SNI activate() does not.
+        app.execute()
     }
 
     function executeCommand(command) {
